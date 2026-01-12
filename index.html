@@ -6,144 +6,178 @@
     <title>機車保養小幫手</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; font-family: -apple-system, sans-serif; }
-        .card { border-radius: 15px; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        .progress { height: 10px; border-radius: 5px; }
-        .btn-update { border-radius: 25px; padding: 10px 20px; font-weight: bold; }
-        .category-header { font-size: 0.9rem; color: #6c757d; margin-top: 20px; border-left: 4px solid #0d6efd; padding-left: 8px; }
-        .status-badge { font-size: 0.8rem; padding: 3px 8px; border-radius: 10px; }
+        body { background-color: #f4f7f6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .container { max-width: 500px; }
+        .card { border-radius: 15px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 12px; transition: transform 0.2s; }
+        .card:active { transform: scale(0.98); }
+        .progress { height: 8px; border-radius: 10px; background-color: #e9ecef; }
+        .category-header { font-size: 0.85rem; font-weight: bold; color: #6c757d; margin: 20px 0 10px 5px; text-transform: uppercase; letter-spacing: 1px; }
+        .odo-badge { background: #212529; color: #fff; padding: 5px 12px; border-radius: 20px; font-weight: 600; }
+        .status-ok { color: #198754; background: #e8f5e9; }
+        .status-warn { color: #fd7e14; background: #fff3e0; }
+        .status-danger { color: #dc3545; background: #ffebee; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.6; } 100% { opacity: 1; } }
+        .btn-main { border-radius: 12px; padding: 12px; font-weight: 600; }
     </style>
 </head>
 <body>
 
 <div id="app" class="container py-4">
     <div id="setup-view" style="display:none;">
-        <h2 class="mb-4 text-center">🚲 歡迎使用</h2>
+        <div class="text-center mb-4">
+            <h2 class="fw-bold">🚲 機車保養紀錄</h2>
+            <p class="text-muted">免登入，專屬網址跟著你</p>
+        </div>
         <div class="card p-4">
-            <h5>設定您的第一台機車</h5>
             <div class="mb-3">
                 <label class="form-label">機車名稱</label>
-                <input type="text" id="new-vehicle-name" class="form-control" placeholder="例如：我的小黑">
+                <input type="text" id="new-vehicle-name" class="form-control form-control-lg" placeholder="例如：勁戰六代">
             </div>
             <div class="mb-3">
-                <label class="form-label">目前總里程</label>
-                <input type="number" id="new-vehicle-odo" class="form-control" placeholder="例如：12500">
+                <label class="form-label">目前總里程 (km)</label>
+                <input type="number" id="new-vehicle-odo" class="form-control form-control-lg" placeholder="例如：5000">
             </div>
-            <button onclick="createNewVehicle()" class="btn btn-primary w-100 btn-update">開始使用</button>
+            <button onclick="createNewVehicle()" class="btn btn-primary w-100 btn-main">開始使用</button>
         </div>
     </div>
 
     <div id="main-view" style="display:none;">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3 id="display-vehicle-name">載入中...</h3>
-            <span class="badge bg-dark" id="display-odo">--- km</span>
+        <div class="d-flex justify-content-between align-items-end mb-3 px-2">
+            <div>
+                <h2 id="display-vehicle-name" class="fw-bold mb-0">載入中...</h2>
+                <small class="text-muted">點擊項目可登記保養</small>
+            </div>
+            <div class="odo-badge" id="display-odo">--- km</div>
         </div>
 
-        <button onclick="showUpdateOdoModal()" class="btn btn-outline-primary w-100 mb-4 btn-update">
-            📍 更新目前里程
-        </button>
+        <button onclick="toggleOdoInput()" class="btn btn-outline-dark w-100 mb-4 btn-main">📍 更新目前里程</button>
+
+        <div id="update-odo-section" style="display:none;" class="card p-3 mb-4 bg-light">
+            <div class="input-group">
+                <input type="number" id="new-odo-input" class="form-control" placeholder="輸入最新總里程">
+                <button onclick="submitOdo()" class="btn btn-dark">更新</button>
+            </div>
+        </div>
 
         <div id="items-container">
             </div>
     </div>
 </div>
 
+<div class="modal fade" id="serviceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="modalItemName">登記保養</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label small text-muted">保養日期</label>
+                    <input type="date" id="serviceDate" class="form-control form-control-lg">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label small text-muted">本次里程 (km)</label>
+                    <input type="number" id="serviceOdo" class="form-control form-control-lg">
+                </div>
+                <button onclick="submitService()" class="btn btn-primary w-100 btn-main mt-2">確認完成</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// 請替換成你部署 GAS 後得到的網頁應用程式 URL
-const API_URL = "你的_GAS_網頁應用程式網址"; 
+    // ⚠️ 這裡請填入你的 GAS 網址
+    const API_URL = "https://script.google.com/macros/s/AKfycbxNLVPzELXmUeXSmHIoxrKMxsrbtXD7VEWbNMBpahecHjgwm6VHxxNmZlVPb-Ny4EwhIQ/exec"; 
 
-let currentOwnerId = new URLSearchParams(window.location.search).get('id');
+    let currentOwnerId = new URLSearchParams(window.location.search).get('id');
+    let selectedItem = "";
 
-// 頁面載入後執行的動作
-window.onload = function() {
-    if (!currentOwnerId) {
-        document.getElementById('setup-view').style.display = 'block';
-    } else {
-        loadVehicleData();
-    }
-};
-
-// 從 GAS 抓取資料
-async function loadVehicleData() {
-    document.getElementById('main-view').style.display = 'block';
-    try {
-        const response = await fetch(`${API_URL}?ownerId=${currentOwnerId}`);
-        const data = await response.json();
-        
-        if (data.error) {
-            alert("找不到資料，請重新建立或檢查連結");
-            location.href = window.location.pathname; // 回到首頁
-            return;
+    window.onload = function() {
+        if (!currentOwnerId) {
+            document.getElementById('setup-view').style.display = 'block';
+        } else {
+            loadVehicleData();
         }
-
-        renderDashboard(data);
-    } catch (e) {
-        console.error("載入失敗", e);
-    }
-}
-
-// 渲染畫面
-function renderDashboard(data) {
-    document.getElementById('display-vehicle-name').innerText = data.vehicleName;
-    document.getElementById('display-odo').innerText = data.currentOdo + " km";
-
-    const container = document.getElementById('items-container');
-    container.innerHTML = ""; // 清空舊資料
-
-    // 按類別分組渲染
-    const categories = ["耗材更換類", "系統檢測類"];
-    categories.forEach(cat => {
-        const catItems = data.items.filter(i => i.category === cat);
-        if (catItems.length > 0) {
-            container.innerHTML += `<div class="category-header">${cat}</div>`;
-            catItems.forEach(item => {
-                const statusColor = item.status === "Expired" ? "danger" : (item.status === "Warning" ? "warning" : "success");
-                const progressWidth = Math.max(0, Math.min(100, (item.remKm / item.intervalKm) * 100));
-                
-                container.innerHTML += `
-                    <div class="card p-3 mt-2" onclick="logService('${item.name}')">
-                        <div class="d-flex justify-content-between mb-1">
-                            <strong>${item.name}</strong>
-                            <span class="status-badge bg-${statusColor}-subtle text-${statusColor}">
-                                ${item.remKm !== null ? '剩餘 ' + item.remKm + ' km' : '檢查項目'}
-                            </span>
-                        </div>
-                        <div class="progress">
-                            <div class="progress-bar bg-${statusColor}" style="width: ${progressWidth}%"></div>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-    });
-}
-
-// 新增機車邏輯
-async function createNewVehicle() {
-    const name = document.getElementById('new-vehicle-name').value;
-    const odo = document.getElementById('new-vehicle-odo').value;
-    const newId = 'BIKE-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-
-    if (!name || !odo) return alert("請填寫完整");
-
-    const payload = {
-        action: "createVehicle",
-        ownerId: newId,
-        name: name,
-        odo: parseInt(odo),
-        model: "DEFAULT" // 這裡可以進階做下拉選單選原廠型號
     };
 
-    // 呼叫 GAS POST API
-    await fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify(payload)
-    });
+    async function loadVehicleData() {
+        document.getElementById('main-view').style.display = 'block';
+        try {
+            const res = await fetch(`${API_URL}?ownerId=${currentOwnerId}`);
+            const data = await res.json();
+            if (data.error) {
+                alert("找不到車輛，請重新建立");
+                location.search = "";
+                return;
+            }
+            renderDashboard(data);
+        } catch (e) { alert("連線失敗，請檢查 API 網址"); }
+    }
 
-    // 跳轉到專屬 ID 網址
-    window.location.search = `?id=${newId}`;
-}
+    function renderDashboard(data) {
+        document.getElementById('display-vehicle-name').innerText = data.vehicleName;
+        document.getElementById('display-odo').innerText = data.currentOdo + " km";
+        const container = document.getElementById('items-container');
+        container.innerHTML = "";
+
+        const cats = ["耗材更換類", "系統檢測類"];
+        cats.forEach(cat => {
+            const items = data.items.filter(i => i.category === cat);
+            if (items.length > 0) {
+                container.innerHTML += `<div class="category-header">${cat}</div>`;
+                items.forEach(item => {
+                    const statusClass = item.status === "Expired" ? "status-danger" : (item.status === "Warning" ? "status-warn" : "status-ok");
+                    const progress = Math.max(5, Math.min(100, (item.remKm / item.intervalKm) * 100));
+                    container.innerHTML += `
+                        <div class="card p-3" onclick="openServiceModal('${item.name}')">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold">${item.name}</span>
+                                <span class="badge ${statusClass}">${item.remKm} km 後</span>
+                            </div>
+                            <div class="progress"><div class="progress-bar ${item.status === 'Expired' ? 'bg-danger' : 'bg-primary'}" style="width: ${progress}%"></div></div>
+                        </div>`;
+                });
+            }
+        });
+    }
+
+    function toggleOdoInput() {
+        const el = document.getElementById('update-odo-section');
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    async function submitOdo() {
+        const odo = document.getElementById('new-odo-input').value;
+        if (!odo) return;
+        await fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "updateOdo", ownerId: currentOwnerId, odo: parseInt(odo) }) });
+        location.reload();
+    }
+
+    function openServiceModal(name) {
+        selectedItem = name;
+        document.getElementById('modalItemName').innerText = name;
+        document.getElementById('serviceDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('serviceOdo').value = document.getElementById('display-odo').innerText.split(' ')[0];
+        new bootstrap.Modal(document.getElementById('serviceModal')).show();
+    }
+
+    async function submitService() {
+        const date = document.getElementById('serviceDate').value;
+        const odo = document.getElementById('serviceOdo').value;
+        await fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "logService", ownerId: currentOwnerId, itemName: selectedItem, date: date, odo: parseInt(odo) }) });
+        location.reload();
+    }
+
+    async function createNewVehicle() {
+        const name = document.getElementById('new-vehicle-name').value;
+        const odo = document.getElementById('new-vehicle-odo').value;
+        if (!name || !odo) return alert("請填寫完整");
+        const newId = 'BIKE-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+        await fetch(API_URL, { method: "POST", body: JSON.stringify({ action: "createVehicle", ownerId: newId, name: name, odo: parseInt(odo), model: "DEFAULT" }) });
+        location.search = `?id=${newId}`;
+    }
 </script>
 </body>
-
 </html>
