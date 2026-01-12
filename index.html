@@ -8,9 +8,11 @@
     <style>
         body { background-color: #f4f7f6; font-family: -apple-system, sans-serif; }
         .container { max-width: 500px; }
+        /* 載入動畫 */
         #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
         .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #0d6efd; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* 卡片與排版 */
         .card { border-radius: 15px; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 12px; }
         .category-header { font-size: 0.85rem; font-weight: bold; color: #6c757d; margin: 20px 0 10px 5px; border-left: 4px solid #0d6efd; padding-left: 10px; }
         .status-danger { color: #dc3545 !important; font-weight: bold; }
@@ -24,16 +26,19 @@
 </head>
 <body>
 
-<div id="loader"><div class="spinner"></div><div class="mt-2 text-primary">同步雲端資料中...</div></div>
+<div id="loader">
+    <div class="spinner"></div>
+    <div class="mt-2 text-primary fw-bold">同步雲端資料中...</div>
+</div>
 
 <div id="app" class="container py-4">
     <div id="setup-view" style="display:none;">
         <h2 class="fw-bold text-center mb-4">🚲 機車保養紀錄</h2>
         <div class="card p-4 text-center">
-            <p class="text-muted">第一次使用？請先設定您的愛車</p>
-            <input type="text" id="new-v-name" class="form-control mb-3" placeholder="機車名稱 (例如：勁戰六代)">
-            <input type="number" id="new-v-odo" class="form-control mb-3" placeholder="目前總里程 (Odometer)">
-            <button onclick="createNewVehicle()" class="btn btn-primary w-100 btn-main">建立車庫並開始</button>
+            <p class="text-muted small">輸入資訊後將產生專屬連結，請記得收藏網址</p>
+            <input type="text" id="new-v-name" class="form-control mb-3 form-control-lg" placeholder="機車名稱 (例如：勁戰六代)">
+            <input type="number" id="new-v-odo" class="form-control mb-3 form-control-lg" placeholder="目前總里程 (km)">
+            <button onclick="createNewVehicle()" class="btn btn-primary w-100 btn-main">建立並開始使用</button>
         </div>
     </div>
 
@@ -41,16 +46,17 @@
         <div class="d-flex justify-content-between align-items-center mb-3 px-2">
             <div>
                 <h2 id="display-name" class="fw-bold mb-0">---</h2>
-                <small class="text-muted">點擊進度條可登記保養</small>
+                <small class="text-muted">點擊卡片或進度條可登記保養</small>
             </div>
             <span class="badge bg-dark p-2 fs-6" id="display-odo">--- km</span>
         </div>
 
-        <button onclick="toggleOdoInput()" class="btn btn-outline-primary w-100 mb-4 btn-main">📍 更新目前里程</button>
+        <button onclick="toggleOdoInput()" class="btn btn-outline-primary w-100 mb-4 btn-main">📍 更新總里程表</button>
         
-        <div id="update-odo-section" style="display:none;" class="card p-3 mb-4 bg-light">
+        <div id="update-odo-section" style="display:none;" class="card p-3 mb-4 bg-light text-center">
+            <label class="form-label small fw-bold">最新里程數值</label>
             <div class="input-group">
-                <input type="number" id="new-odo-input" class="form-control" placeholder="輸入最新里程表數值">
+                <input type="number" id="new-odo-input" class="form-control" placeholder="請輸入里程">
                 <button onclick="submitOdo()" class="btn btn-dark">更新</button>
             </div>
         </div>
@@ -89,8 +95,8 @@
                 <span class="input-group-text">km</span>
             </div>
             <div class="d-flex gap-2">
-                <button class="btn btn-light w-100" data-bs-dismiss="modal">取消</button>
-                <button onclick="submitNewInterval()" class="btn btn-dark w-100">儲存</button>
+                <button class="btn btn-light w-100 btn-main" data-bs-dismiss="modal">取消</button>
+                <button onclick="submitNewInterval()" class="btn btn-dark w-100 btn-main">儲存新週期</button>
             </div>
         </div>
     </div></div>
@@ -98,7 +104,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // ⚠️ 請修改此處為你的 GAS 網址
     const API_URL = "https://script.google.com/macros/s/AKfycbxNLVPzELXmUeXSmHIoxrKMxsrbtXD7VEWbNMBpahecHjgwm6VHxxNmZlVPb-Ny4EwhIQ/exec"; 
     
     let currentOwnerId = new URLSearchParams(window.location.search).get('id');
@@ -123,7 +128,7 @@
             const res = await fetch(`${API_URL}?ownerId=${currentOwnerId}`);
             const data = await res.json();
             if(data.error) {
-                alert("查無車輛，請重新建立");
+                alert("查無車輛 ID，請重新建立");
                 window.location.search = "";
                 return;
             }
@@ -145,10 +150,10 @@
                         
                         container.innerHTML += `
                             <div class="card p-3">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <div onclick="openServiceModal('${item.name}')" style="cursor:pointer">
-                                        <b class="fs-5">${item.name}</b>
-                                        <div class="small text-muted">間隔: ${item.intervalKm} km</div>
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div onclick="openServiceModal('${item.name}')" style="cursor:pointer; flex: 1;">
+                                        <b class="fs-5 text-dark">${item.name}</b>
+                                        <div class="small text-muted">週期: ${item.intervalKm} km</div>
                                     </div>
                                     <div class="text-end">
                                         <div class="${statusClass} mb-1">${item.remKm} km 後</div>
@@ -163,18 +168,23 @@
                 }
             });
             document.getElementById('main-view').style.display='block';
-        } catch (e) { alert("連線失敗，請檢查 API 設定"); }
+        } catch (e) { 
+            alert("載入失敗，請確認網路連線或 API 部署設定"); 
+            console.error(e);
+        }
         hideLoader();
     }
 
     async function createNewVehicle() {
         const name = document.getElementById('new-v-name').value;
         const odo = document.getElementById('new-v-odo').value;
-        if(!name || !odo) return alert("請輸入車名與里程");
+        if(!name || !odo) return alert("請填寫名稱與目前里程");
         showLoader();
         const id = 'BIKE-' + Math.random().toString(36).substr(2,6).toUpperCase();
-        await fetch(API_URL, {method:"POST", body:JSON.stringify({action:"createVehicle", ownerId:id, name, odo:parseInt(odo), model:"DEFAULT"})});
-        window.location.search = `?id=${id}`;
+        try {
+            await fetch(API_URL, {method:"POST", body:JSON.stringify({action:"createVehicle", ownerId:id, name, odo:parseInt(odo), model:"DEFAULT"})});
+            window.location.search = `?id=${id}`;
+        } catch(e) { alert("建立失敗"); hideLoader(); }
     }
 
     function toggleOdoInput() { 
@@ -184,10 +194,12 @@
 
     async function submitOdo() {
         const odo = document.getElementById('new-odo-input').value;
-        if(!odo) return;
+        if(!odo) return alert("請輸入里程");
         showLoader();
-        await fetch(API_URL, {method:"POST", body:JSON.stringify({action:"updateOdo", ownerId:currentOwnerId, odo:parseInt(odo)})});
-        location.reload();
+        try {
+            await fetch(API_URL, {method:"POST", body:JSON.stringify({action:"updateOdo", ownerId:currentOwnerId, odo:parseInt(odo)})});
+            location.reload();
+        } catch(e) { alert("更新失敗"); hideLoader(); }
     }
 
     function openServiceModal(selectedName) {
@@ -211,20 +223,22 @@
     async function submitMultiService() {
         const checkboxes = document.querySelectorAll('#multi-select-list input:checked');
         const selectedNames = Array.from(checkboxes).map(cb => cb.value);
-        if (selectedNames.length === 0) return alert("請勾選保養項目");
+        if (selectedNames.length === 0) return alert("請至少勾選一個保養項目");
 
         showLoader();
-        await fetch(API_URL, {
-            method: "POST",
-            body: JSON.stringify({
-                action: "logService",
-                ownerId: currentOwnerId,
-                itemNames: selectedNames,
-                date: document.getElementById('sDate').value,
-                odo: parseInt(document.getElementById('sOdo').value)
-            })
-        });
-        location.reload();
+        try {
+            await fetch(API_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "logService",
+                    ownerId: currentOwnerId,
+                    itemNames: selectedNames,
+                    date: document.getElementById('sDate').value,
+                    odo: parseInt(document.getElementById('sOdo').value)
+                })
+            });
+            location.reload();
+        } catch(e) { alert("登記失敗"); hideLoader(); }
     }
 
     function openIntervalModal(name, currentVal) {
@@ -236,17 +250,20 @@
 
     async function submitNewInterval() {
         const newVal = document.getElementById('newIntervalVal').value;
+        if(!newVal) return;
         showLoader();
-        await fetch(API_URL, {
-            method: "POST",
-            body: JSON.stringify({
-                action: "updateInterval",
-                ownerId: currentOwnerId,
-                itemName: itemToEdit,
-                newInterval: parseInt(newVal)
-            })
-        });
-        location.reload();
+        try {
+            await fetch(API_URL, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: "updateInterval",
+                    ownerId: currentOwnerId,
+                    itemName: itemToEdit,
+                    newInterval: parseInt(newVal)
+                })
+            });
+            location.reload();
+        } catch(e) { alert("儲存失敗"); hideLoader(); }
     }
 </script>
 </body>
