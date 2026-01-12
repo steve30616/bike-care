@@ -3,66 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>機車保養小幫手</title>
+    <title>機車保養管家</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; font-family: -apple-system, sans-serif; }
+        body { background-color: #f0f2f5; font-family: -apple-system, sans-serif; padding-bottom: 80px; }
         .container { max-width: 500px; }
         #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
         .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #0d6efd; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .card { border-radius: 15px; border: none; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 12px; }
-        .category-header { font-size: 0.8rem; font-weight: bold; color: #6c757d; margin: 20px 0 10px; text-transform: uppercase; letter-spacing: 1px; }
-        .progress { height: 10px; border-radius: 10px; cursor: pointer; }
+        .card { border-radius: 16px; border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 12px; transition: 0.2s; }
+        .card:active { transform: scale(0.98); }
+        .category-header { font-size: 0.85rem; font-weight: bold; color: #6c757d; margin: 24px 0 8px 4px; border-left: 4px solid #0d6efd; padding-left: 10px; }
         .status-danger { color: #dc3545; } .status-warn { color: #fd7e14; } .status-ok { color: #198754; }
-        .btn-main { border-radius: 10px; font-weight: 600; padding: 10px; }
+        .progress { height: 10px; border-radius: 10px; background-color: #e9ecef; }
+        .btn-fab { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; border-radius: 30px; padding: 15px; font-weight: bold; box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3); z-index: 100; }
+        .item-name { font-size: 1.1rem; color: #212529; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="loader"><div class="spinner"></div><div class="mt-2 text-primary fw-bold">連線中...</div></div>
+<div id="loader"><div class="spinner"></div><div class="mt-2 text-primary fw-bold">同步中...</div></div>
 
 <div id="app" class="container py-4">
     <div id="setup-view" style="display:none;">
-        <div class="card p-4 text-center">
-            <h3 class="fw-bold mb-3">🚲 新增機車</h3>
-            <input type="text" id="new-v-name" class="form-control mb-3" placeholder="機車名稱">
-            <input type="number" id="new-v-odo" class="form-control mb-3" placeholder="目前總里程 (km)">
-            <button onclick="createNewVehicle()" class="btn btn-primary w-100 btn-main">開始使用</button>
+        <h2 class="fw-bold text-center mb-4">🚲 我的機車小幫手</h2>
+        <div class="card p-4">
+            <label class="small fw-bold mb-1">機車名稱</label>
+            <input type="text" id="new-v-name" class="form-control mb-3" placeholder="例如：我的勁戰">
+            <label class="small fw-bold mb-1">目前總里程 (km)</label>
+            <input type="number" id="new-v-odo" class="form-control mb-4" placeholder="請輸入里程錶數值">
+            <button onclick="createNewVehicle()" class="btn btn-primary w-100 py-3 fw-bold">建立資料並收藏網頁</button>
         </div>
     </div>
 
     <div id="main-view" style="display:none;">
-        <div class="d-flex justify-content-between align-items-end mb-4">
-            <div><h2 id="display-name" class="fw-bold mb-0">---</h2><small class="text-muted">點擊卡片登記保養</small></div>
-            <div class="badge bg-dark fs-6" id="display-odo">--- km</div>
+        <div class="d-flex justify-content-between align-items-end mb-4 px-2">
+            <div><h2 id="display-name" class="fw-bold mb-0 text-primary">---</h2><small class="text-muted">點擊項目名稱修改週期</small></div>
+            <div class="text-end"><span class="badge bg-dark fs-6" id="display-odo">--- km</span></div>
         </div>
-        <button onclick="toggleOdoInput()" class="btn btn-outline-primary w-100 mb-4 btn-main">📍 更新目前總里程</button>
-        <div id="update-odo-section" style="display:none;" class="card p-3 mb-4 bg-light">
-            <div class="input-group"><input type="number" id="new-odo-input" class="form-control"><button onclick="submitOdo()" class="btn btn-dark">更新</button></div>
+        
+        <button onclick="toggleOdoInput()" class="btn btn-white bg-white w-100 mb-3 shadow-sm py-2">📍 更新總里程紀錄</button>
+        
+        <div id="update-odo-section" style="display:none;" class="card p-3 mb-4">
+            <div class="row g-2">
+                <div class="col-6"><label class="small">數值 (km)</label><input type="number" id="new-odo-input" class="form-control"></div>
+                <div class="col-6"><label class="small">日期</label><input type="date" id="new-odo-date" class="form-control"></div>
+                <div class="col-12 mt-2"><button onclick="submitOdo()" class="btn btn-dark w-100">儲存里程</button></div>
+            </div>
         </div>
+
         <div id="items-container"></div>
     </div>
 </div>
 
-<div class="modal fade" id="serviceModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:20px;">
-    <div class="modal-header border-0 pb-0"><h5 class="modal-title fw-bold">登記保養</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<button id="fab-btn" class="btn btn-primary btn-fab" onclick="openServiceModal()" style="display:none;">➕ 登記保養項目</button>
+
+<div class="modal fade" id="serviceModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:24px;">
+    <div class="modal-header border-0 pb-0"><h5 class="modal-title fw-bold">勾選已完成項目</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
     <div class="modal-body">
-        <div id="multi-select-list" class="mb-3 p-2 bg-light rounded"></div>
+        <div id="multi-select-list" class="mb-3 p-2 bg-light rounded" style="max-height:300px; overflow-y:auto;"></div>
         <div class="row g-2 mb-3">
-            <div class="col-6"><label class="small">日期</label><input type="date" id="sDate" class="form-control"></div>
-            <div class="col-6"><label class="small">里程</label><input type="number" id="sOdo" class="form-control"></div>
+            <div class="col-6"><label class="small fw-bold">保養日期</label><input type="date" id="sDate" class="form-control"></div>
+            <div class="col-6"><label class="small fw-bold">保養里程</label><input type="number" id="sOdo" class="form-control"></div>
         </div>
-        <button onclick="submitMultiService()" class="btn btn-primary w-100 btn-main">確認完成</button>
+        <button onclick="submitMultiService()" class="btn btn-primary w-100 py-3 fw-bold shadow-sm">送出登記</button>
     </div>
 </div></div></div>
 
-<div class="modal fade" id="intervalModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:20px;">
+<div class="modal fade" id="intervalModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:24px;">
     <div class="modal-body p-4">
-        <h5 id="intItemName" class="fw-bold mb-3">修改週期</h5>
-        <div class="mb-3"><label class="small fw-bold">里程週期 (km)</label><input type="number" id="newIntKm" class="form-control"><div id="hintKm" class="small text-muted"></div></div>
-        <div class="mb-4"><label class="small fw-bold">時間週期 (月)</label><input type="number" id="newIntMon" class="form-control"><div id="hintMon" class="small text-muted"></div></div>
-        <button onclick="submitNewInterval()" class="btn btn-dark w-100 btn-main">儲存設定</button>
+        <h5 id="intItemName" class="fw-bold mb-3 text-center">設定保養間隔</h5>
+        <div class="mb-3">
+            <label class="small fw-bold">里程週期 (km)</label>
+            <input type="number" id="newIntKm" class="form-control form-control-lg">
+            <div id="hintKm" class="form-text"></div>
+        </div>
+        <div class="mb-4">
+            <label class="small fw-bold">時間週期 (月)</label>
+            <input type="number" id="newIntMon" class="form-control form-control-lg">
+            <div id="hintMon" class="form-text"></div>
+        </div>
+        <button onclick="submitNewInterval()" class="btn btn-dark w-100 py-3 fw-bold">儲存更新</button>
     </div>
 </div></div></div>
 
@@ -72,7 +93,16 @@
     let currentOwnerId = new URLSearchParams(window.location.search).get('id');
     let allItems = [], itemToEdit = "";
 
-    window.onload = () => { if (!currentOwnerId) { hideLoader(); document.getElementById('setup-view').style.display='block'; } else { loadVehicleData(); } };
+    window.onload = () => { 
+        if (!currentOwnerId) { 
+            hideLoader(); 
+            document.getElementById('setup-view').style.display='block'; 
+        } else { 
+            document.getElementById('fab-btn').style.display='block';
+            loadVehicleData(); 
+        } 
+    };
+
     function showLoader() { document.getElementById('loader').style.display='flex'; }
     function hideLoader() { document.getElementById('loader').style.display='none'; }
 
@@ -95,44 +125,49 @@
                         container.innerHTML += `
                             <div class="card p-3">
                                 <div class="d-flex justify-content-between mb-2">
-                                    <b onclick="openServiceModal('${item.name}')" style="cursor:pointer">${item.name}</b>
+                                    <div class="item-name fw-bold" onclick="openIntervalModal('${item.name}',${item.intKm},${item.intMon},${item.offKm},${item.offMon})">${item.name}</div>
                                     <div class="text-end">
-                                        <div class="${statusClass} fw-bold">${item.remKm} km / ${item.remDays} 天</div>
-                                        <small class="text-muted" style="cursor:pointer" onclick="openIntervalModal('${item.name}',${item.intKm},${item.intMon},${item.offKm},${item.offMon})">⚙️ 修改</small>
+                                        <div class="${statusClass} fw-bold small">${item.remKm} km / ${item.remDays} 天</div>
                                     </div>
                                 </div>
-                                <div class="progress" onclick="openServiceModal('${item.name}')"><div class="progress-bar ${item.status==='Expired'?'bg-danger':'bg-success'}" style="width:${item.progress}%"></div></div>
+                                <div class="progress"><div class="progress-bar ${item.status==='Expired'?'bg-danger':(item.status==='Warning'?'bg-warning':'bg-success')}" style="width:${item.progress}%"></div></div>
                             </div>`;
                     });
                 }
             });
             document.getElementById('main-view').style.display='block';
-        } catch (e) { alert("連線失敗"); }
+        } catch (e) { alert("讀取資料失敗"); }
         hideLoader();
     }
 
     async function createNewVehicle() {
         const name = document.getElementById('new-v-name').value, odo = document.getElementById('new-v-odo').value;
-        if(!name || !odo) return alert("請填寫");
+        if(!name || !odo) return alert("請填寫名稱與里程");
         showLoader();
         const id = 'BIKE-' + Math.random().toString(36).substr(2,6).toUpperCase();
-        await fetch(API_URL, {method:"POST", body:JSON.stringify({action:"createVehicle", ownerId:id, name, odo:parseInt(odo)})});
+        await fetch(API_URL, {method:"POST", body:JSON.stringify({action:"createVehicle", ownerId:id, name:name, odo:parseInt(odo)})});
         window.location.search = `?id=${id}`;
     }
 
-    function toggleOdoInput() { const el = document.getElementById('update-odo-section'); el.style.display = el.style.display==='none'?'block':'none'; }
+    function toggleOdoInput() { 
+        const el = document.getElementById('update-odo-section'); 
+        el.style.display = el.style.display==='none'?'block':'none';
+        document.getElementById('new-odo-date').value = new Date().toISOString().split('T')[0];
+    }
+
     async function submitOdo() {
         const odo = document.getElementById('new-odo-input').value;
+        const date = document.getElementById('new-odo-date').value;
+        if(!odo) return alert("請輸入里程");
         showLoader();
-        await fetch(API_URL, {method:"POST", body:JSON.stringify({action:"updateOdo", ownerId:currentOwnerId, odo:parseInt(odo)})});
+        await fetch(API_URL, {method:"POST", body:JSON.stringify({action:"updateOdo", ownerId:currentOwnerId, odo:parseInt(odo), date:date})});
         location.reload();
     }
 
-    function openServiceModal(name) {
+    function openServiceModal() {
         const list = document.getElementById('multi-select-list'); list.innerHTML = "";
         allItems.forEach(i => {
-            const checked = i.name === name ? "checked" : "";
-            list.innerHTML += `<div class="form-check"><input class="form-check-input" type="checkbox" value="${i.name}" ${checked} id="c-${i.name}"><label class="form-check-label" for="c-${i.name}">${i.name}</label></div>`;
+            list.innerHTML += `<div class="form-check py-2 border-bottom"><input class="form-check-input ms-0 me-2" type="checkbox" value="${i.name}" id="c-${i.name}"><label class="form-check-label d-block" for="c-${i.name}">${i.name} <small class="text-muted">(剩 ${i.remKm}km)</small></label></div>`;
         });
         document.getElementById('sDate').value = new Date().toISOString().split('T')[0];
         document.getElementById('sOdo').value = document.getElementById('display-odo').innerText.split(' ')[0];
@@ -141,6 +176,7 @@
 
     async function submitMultiService() {
         const names = Array.from(document.querySelectorAll('#multi-select-list input:checked')).map(cb => cb.value);
+        if(names.length === 0) return alert("請勾選保養項目");
         showLoader();
         await fetch(API_URL, {method:"POST", body:JSON.stringify({action:"logService", ownerId:currentOwnerId, itemNames:names, date:document.getElementById('sDate').value, odo:parseInt(document.getElementById('sOdo').value)})});
         location.reload();
