@@ -3,42 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>機車保養管家 Pro</title>
+    <title>機車保養管家 Elite</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f1f5f9; font-family: -apple-system, sans-serif; padding-bottom: 120px; }
+        body { background-color: #f8fafc; font-family: -apple-system, sans-serif; padding-bottom: 120px; }
         .container { max-width: 500px; }
         #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #e11d48; border-radius: 50%; animation: spin 1s linear infinite; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #0d6efd; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
         .header-box { padding: 30px 0; border-radius: 0 0 35px 35px; background: white; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .header-warning { background-color: #e11d48 !important; color: white !important; }
-        .header-warning .badge { background-color: white !important; color: #e11d48 !important; }
 
-        .card-item { border-radius: 20px; border: none; border-left: 8px solid #10b981; box-shadow: 0 4px 12px rgba(0,0,0,0.04); margin-bottom: 15px; cursor: pointer; background: white; padding: 22px; transition: 0.2s; }
-        .card-item:active { transform: scale(0.98); background: #fafafa; }
+        .card-item { border-radius: 20px; border: none; border-left: 8px solid #10b981; box-shadow: 0 4px 12px rgba(0,0,0,0.04); margin-bottom: 15px; cursor: pointer; background: white; padding: 20px; transition: transform 0.1s; }
+        .card-item:active { transform: scale(0.98); }
         .card-expired { background-color: #fff1f2; border-left-color: #e11d48; }
         
         .progress { height: 10px; border-radius: 10px; background-color: #f1f5f9; }
         .btn-fab { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 420px; border-radius: 35px; padding: 18px; font-weight: 800; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.1); z-index: 100; transition: 0.3s; }
         .btn-fab-warning { background-color: #e11d48 !important; animation: pulse-red 2s infinite; }
-        @keyframes pulse-red { 0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(225,29,72,0.7); } 70% { transform: translateX(-50%) scale(1.05); box-shadow: 0 0 0 15px rgba(225,29,72,0); } 100% { transform: translateX(-50%) scale(1); } }
+        @keyframes pulse-red { 0% { transform: translateX(-50%) scale(1); } 70% { transform: translateX(-50%) scale(1.05); } 100% { transform: translateX(-50%) scale(1); } }
 
-        .category-header { font-size: 0.85rem; font-weight: 800; color: #94a3b8; margin: 35px 0 10px 5px; border-bottom: 1px solid #e2e8f0; }
-        .mode-btn { border-radius: 15px; border: 2px solid #f1f5f9; padding: 15px; cursor: pointer; background: white; text-align: center; flex: 1; transition: 0.2s; }
+        .category-header { font-size: 0.85rem; font-weight: 800; color: #94a3b8; margin: 30px 0 10px 5px; border-bottom: 1px solid #e2e8f0; }
+        .mode-btn { border-radius: 15px; border: 2px solid #f1f5f9; padding: 15px; cursor: pointer; background: white; text-align: center; flex: 1; }
         .mode-btn.active { border-color: #0d6efd; background-color: #f0f7ff; color: #0d6efd; font-weight: bold; }
     </style>
 </head>
 <body>
 
-<div id="loader"><div class="spinner"></div><div class="mt-2 text-danger fw-bold">連線雲端資料庫...</div></div>
+<div id="loader"><div class="spinner"></div><div class="mt-2 text-primary fw-bold">連線中...</div></div>
 
 <div id="app">
     <div id="setup-view" class="container py-5" style="display:none;">
         <h2 class="fw-bold text-center mb-4">建立車輛檔案</h2>
         <div class="card p-4 border-0 shadow-sm" style="border-radius:25px;">
-            <input type="text" id="new-v-name" class="form-control mb-3" placeholder="我的機車名稱">
+            <input type="text" id="new-v-name" class="form-control mb-3" placeholder="機車名稱">
             <input type="number" id="new-v-odo" class="form-control mb-4" placeholder="目前里程 (km)">
             <button onclick="createNewVehicle()" class="btn btn-primary w-100 py-3 fw-bold">開啟紀錄</button>
         </div>
@@ -57,14 +56,14 @@
         
         <div class="container">
             <div class="d-flex gap-2 mb-4">
-                <button onclick="toggleOdoInput()" class="btn btn-white bg-white flex-grow-1 shadow-sm py-2 border-0 fw-bold" style="border-radius:15px; color:#475569;">更新里程</button>
-                <button onclick="openManageItemsModal()" class="btn btn-white bg-white shadow-sm py-2 border-0 fw-bold px-4" style="border-radius:15px; color:#475569;">項目管理</button>
+                <button onclick="toggleOdoInput()" class="btn btn-white bg-white flex-grow-1 shadow-sm py-2 border-0 fw-bold" style="border-radius:15px;">更新里程</button>
+                <button onclick="openManageItemsModal()" class="btn btn-white bg-white shadow-sm py-2 border-0 fw-bold px-3" style="border-radius:15px;">項目管理</button>
             </div>
             <div id="update-odo-section" style="display:none;" class="card p-3 mb-4 border-0 shadow-sm text-start">
                 <div class="row g-2">
                     <div class="col-6"><input type="number" id="new-odo-input" class="form-control" placeholder="里程"></div>
                     <div class="col-6"><input type="date" id="new-odo-date" class="form-control"></div>
-                    <div class="col-12 mt-2"><button onclick="submitOdo()" class="btn btn-dark w-100 py-2">更新紀錄</button></div>
+                    <div class="col-12 mt-2"><button onclick="submitOdo()" class="btn btn-dark w-100">更新紀錄</button></div>
                 </div>
             </div>
             <div id="items-container"></div>
@@ -74,9 +73,20 @@
 
 <button id="fab-btn" class="btn btn-primary btn-fab" onclick="openServiceModal()" style="display:none;">登記保養項目</button>
 
-<div class="modal fade" id="manageItemsModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;"><div class="modal-header border-0 pb-0 px-4 pt-4"><h5 class="modal-title fw-bold">勾選顯示項目</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body px-4"><div id="all-items-list" class="mb-4 p-2 bg-light rounded" style="max-height:450px; overflow-y:auto;"></div><button onclick="submitManageItems()" class="btn btn-primary w-100 py-3 fw-bold mb-3 shadow-sm" style="border-radius:15px;">儲存並同步</button></div></div></div></div>
-<div class="modal fade" id="serviceModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;"><div class="modal-header border-0 pb-0 px-4 pt-4"><h5 class="modal-title fw-bold">保養登記</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body px-4"><div id="multi-select-list" class="mb-4 p-1 bg-light rounded" style="max-height:350px; overflow-y:auto;"></div><div class="row g-2 mb-4"><div class="col-6"><label class="small fw-bold">日期</label><input type="date" id="sDate" class="form-control"></div><div class="col-6"><label class="small fw-bold">里程</label><input type="number" id="sOdo" class="form-control"></div></div><button onclick="submitMultiService()" class="btn btn-primary w-100 py-3 fw-bold mb-3 shadow-sm" style="border-radius:15px;">確認登記</button></div></div></div></div>
-<div class="modal fade" id="intervalModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;"><div class="modal-body p-4 text-center"><h5 id="intItemName" class="fw-bold mb-4">提醒週期設定</h5><div class="d-flex gap-2 mb-4"><div id="mode-km" class="mode-btn" onclick="setMode('KM')">按里程數</div><div id="mode-mon" class="mode-btn" onclick="setMode('MON')">按日期</div></div><div id="input-km-area" class="mb-3 text-start" style="display:none;"><label class="small fw-bold">週期里程 (km)</label><input type="number" id="newIntKm" class="form-control"></div><div id="input-mon-area" class="mb-4 text-start" style="display:none;"><label class="small fw-bold">週期時間 (月)</label><input type="number" id="newIntMon" class="form-control"></div><button onclick="submitNewInterval()" class="btn btn-dark w-100 py-3 fw-bold" style="border-radius:18px;">確認儲存</button></div></div></div></div>
+<div class="modal fade" id="manageItemsModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;"><div class="modal-header border-0 pb-0 px-4 pt-4"><h5 class="modal-title fw-bold">管理追蹤項目</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body px-4"><div id="all-items-list" class="mb-4 p-2 bg-light rounded" style="max-height:450px; overflow-y:auto;"></div><button onclick="submitManageItems()" class="btn btn-primary w-100 py-3 fw-bold mb-3 shadow-sm">儲存設定</button></div></div></div></div>
+
+<div class="modal fade" id="serviceModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;"><div class="modal-header border-0 pb-0 px-4 pt-4"><h5 class="modal-title fw-bold">保養登記</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body px-4"><div id="multi-select-list" class="mb-4 p-1 bg-light rounded" style="max-height:350px; overflow-y:auto;"></div><div class="row g-2 mb-4"><div class="col-6"><input type="date" id="sDate" class="form-control"></div><div class="col-6"><input type="number" id="sOdo" class="form-control"></div></div><button onclick="submitMultiService()" class="btn btn-primary w-100 py-3 fw-bold mb-3 shadow-sm">確認登記</button></div></div></div></div>
+
+<div class="modal fade" id="intervalModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;"><div class="modal-body p-4 text-center">
+    <h5 id="intItemName" class="fw-bold mb-4">設定提醒週期</h5>
+    <div class="d-flex gap-2 mb-4">
+        <div id="mode-km" class="mode-btn" onclick="setMode('KM')">按里程數</div>
+        <div id="mode-mon" class="mode-btn" onclick="setMode('MON')">按日期</div>
+    </div>
+    <div id="input-km-area" class="mb-3 text-start" style="display:none;"><label class="small fw-bold">里程週期 (km)</label><input type="number" id="newIntKm" class="form-control"></div>
+    <div id="input-mon-area" class="mb-4 text-start" style="display:none;"><label class="small fw-bold">月份週期 (月)</label><input type="number" id="newIntMon" class="form-control"></div>
+    <button onclick="submitNewInterval()" class="btn btn-dark w-100 py-3 fw-bold" style="border-radius:15px;">儲存修改</button>
+</div></div></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -105,11 +115,11 @@
 
             if (hasExpired) {
                 header.classList.add('header-warning');
-                subtext.innerText = "注意：有項目已到期";
+                subtext.innerText = "🚨 需保養提醒";
                 fab.classList.add('btn-fab-warning');
             } else {
                 header.classList.remove('header-warning');
-                subtext.innerText = "車況良好";
+                subtext.innerText = "目前的車況良好";
                 fab.classList.remove('btn-fab-warning');
             }
 
@@ -119,60 +129,50 @@
             
             categories.forEach(cat => {
                 const items = activeItems.filter(i => i.category === cat);
-                container.innerHTML += `<div class="category-header text-uppercase">${cat}</div>`;
+                container.innerHTML += `<div class="category-header">${cat}</div>`;
                 items.forEach(item => {
-                    // ⚠️ 修復點：在這裡加上了 onclick 事件，並傳入完整參數
-                    container.innerHTML += `
-                        <div class="card-item ${item.status==='Expired'?'card-expired':''}" 
-                             onclick="openIntervalModal('${item.name}', ${item.intKm}, ${item.intMon}, ${item.offKm}, ${item.offMon}, '${item.mode}')">
-                            <div class="d-flex justify-content-between mb-2">
-                                <div class="fw-bold fs-5">${item.name}</div>
-                                <div class="${item.status==='Expired'?'text-danger fw-bold':'text-success fw-bold'}">剩 ${item.displayValue}</div>
-                            </div>
-                            <div class="progress"><div class="progress-bar ${item.status==='Expired'?'bg-danger':'bg-success'}" style="width:${item.progress}%"></div></div>
-                        </div>`;
+                    const card = document.createElement('div');
+                    card.className = `card-item ${item.status === 'Expired' ? 'card-expired' : ''}`;
+                    // 直接綁定點擊事件，避免 HTML 字符串解析錯誤
+                    card.onclick = () => openIntervalModal(item.name, item.intKm, item.intMon, item.offKm, item.offMon, item.mode);
+                    
+                    card.innerHTML = `
+                        <div class="d-flex justify-content-between mb-2">
+                            <div class="fw-bold fs-5">${item.name}</div>
+                            <div class="${item.status === 'Expired' ? 'text-danger fw-bold' : 'text-success fw-bold'}">剩 ${item.displayValue}</div>
+                        </div>
+                        <div class="progress"><div class="progress-bar ${item.status === 'Expired' ? 'bg-danger' : 'bg-success'}" style="width:${item.progress}%"></div></div>
+                    `;
+                    container.appendChild(card);
                 });
             });
             document.getElementById('main-view').style.display='block';
-        } catch (e) { alert("同步失敗"); }
+        } catch (e) { alert("連線失敗"); }
         hideLoader();
     }
 
-    function openManageItemsModal() {
-        const list = document.getElementById('all-items-list');
-        list.innerHTML = "";
-        allItems.forEach(i => {
-            list.innerHTML += `<div class="form-check py-3 border-bottom d-flex align-items-center">
-                <input class="form-check-input ms-0 me-3" type="checkbox" value="${i.name}" id="m-${i.name}" ${i.isActive?'checked':''} style="width:24px; height:24px;">
-                <label class="form-check-label d-block w-100 fw-bold" for="m-${i.name}">${i.name} <small class="text-muted">(${i.category})</small></label></div>`;
-        });
-        new bootstrap.Modal(document.getElementById('manageItemsModal')).show();
+    function openIntervalModal(name, k, m, ok, om, mode) {
+        itemToEdit = name; 
+        document.getElementById('intItemName').innerText = name;
+        document.getElementById('newIntKm').value = k; 
+        document.getElementById('newIntMon').value = m;
+        document.getElementById('hintKm').innerText = `原廠建議：${ok} km`; 
+        document.getElementById('hintMon').innerText = `原廠建議：${om} 月`;
+        setMode(mode || "KM");
+        new bootstrap.Modal(document.getElementById('intervalModal')).show();
     }
 
-    async function submitManageItems() {
-        const activeItems = Array.from(document.querySelectorAll('#all-items-list input:checked')).map(cb => cb.value);
+    async function submitNewInterval() {
         showLoader();
-        await fetch(API_URL, {method:"POST", mode:"no-cors", body:JSON.stringify({action:"toggleItems", ownerId:currentOwnerId, activeItems:activeItems})});
-        setTimeout(() => location.reload(), 1500);
-    }
-
-    function openServiceModal() {
-        const list = document.getElementById('multi-select-list'); list.innerHTML = "";
-        allItems.filter(i => i.isActive).forEach(i => {
-            list.innerHTML += `<div class="form-check py-3 border-bottom d-flex align-items-center">
-                <input class="form-check-input ms-0 me-3" type="checkbox" value="${i.name}" id="c-${i.name}" style="width:24px; height:24px;">
-                <label class="form-check-label d-block w-100 ${i.status==='Expired'?'text-danger fw-bold':'text-success'}" for="c-${i.name}">${i.name} <small class="text-muted">(${i.displayValue})</small></label></div>`;
-        });
-        document.getElementById('sDate').value = new Date().toISOString().split('T')[0];
-        document.getElementById('sOdo').value = document.getElementById('display-odo').innerText.split(' ')[0];
-        new bootstrap.Modal(document.getElementById('serviceModal')).show();
-    }
-
-    async function submitMultiService() {
-        const names = Array.from(document.querySelectorAll('#multi-select-list input:checked')).map(cb => cb.value);
-        if(!names.length) return alert("請勾選項目");
-        showLoader();
-        await fetch(API_URL, {method:"POST", mode:"no-cors", body:JSON.stringify({action:"logService", ownerId:currentOwnerId, itemNames:names, date:document.getElementById('sDate').value, odo:parseInt(document.getElementById('sOdo').value)})});
+        const body = {
+            action: "updateInterval",
+            ownerId: currentOwnerId,
+            itemName: itemToEdit,
+            newKm: parseInt(document.getElementById('newIntKm').value),
+            newMon: parseInt(document.getElementById('newIntMon').value),
+            mode: selectedMode
+        };
+        await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(body) });
         setTimeout(() => location.reload(), 1500);
     }
 
@@ -184,24 +184,42 @@
         document.getElementById('input-mon-area').style.display = (m === 'MON') ? 'block' : 'none';
     }
 
-    function openIntervalModal(name, k, m, ok, om, mode) {
-        itemToEdit = name; document.getElementById('intItemName').innerText = name;
-        document.getElementById('newIntKm').value = k; document.getElementById('newIntMon').value = m;
-        document.getElementById('hintKm').innerText = `原廠建議：${ok} km`; 
-        document.getElementById('hintMon').innerText = `原廠建議：${om} 月`;
-        setMode(mode || "KM");
-        new bootstrap.Modal(document.getElementById('intervalModal')).show();
+    // 其他管理、更新功能
+    function openManageItemsModal() {
+        const list = document.getElementById('all-items-list');
+        list.innerHTML = "";
+        allItems.forEach(i => {
+            list.innerHTML += `<div class="form-check py-3 border-bottom d-flex align-items-center">
+                <input class="form-check-input ms-0 me-3" type="checkbox" value="${i.name}" id="m-${i.name}" ${i.isActive?'checked':''} style="width:24px; height:24px;">
+                <label class="form-check-label d-block w-100 fw-bold" for="m-${i.name}">${i.name} <small class="text-muted">(${i.category})</small></label></div>`;
+        });
+        new bootstrap.Modal(document.getElementById('manageItemsModal')).show();
     }
-
-    async function submitNewInterval() {
+    async function submitManageItems() {
+        const activeItems = Array.from(document.querySelectorAll('#all-items-list input:checked')).map(cb => cb.value);
         showLoader();
-        await fetch(API_URL, {method:"POST", mode:"no-cors", body:JSON.stringify({action:"updateInterval", ownerId:currentOwnerId, itemName:itemToEdit, newKm:parseInt(document.getElementById('newIntKm').value), newMon:parseInt(document.getElementById('newIntMon').value), mode:selectedMode})});
+        await fetch(API_URL, {method:"POST", mode:"no-cors", body:JSON.stringify({action:"toggleItems", ownerId:currentOwnerId, activeItems:activeItems})});
         setTimeout(() => location.reload(), 1500);
     }
-
+    function openServiceModal() {
+        const list = document.getElementById('multi-select-list'); list.innerHTML = "";
+        allItems.filter(i => i.isActive).forEach(i => {
+            list.innerHTML += `<div class="form-check py-3 border-bottom d-flex align-items-center"><input class="form-check-input ms-0 me-3" type="checkbox" value="${i.name}" id="c-${i.name}" style="width:24px; height:24px;"><label class="form-check-label d-block w-100" for="c-${i.name}">${i.name}</label></div>`;
+        });
+        document.getElementById('sDate').value = new Date().toISOString().split('T')[0];
+        document.getElementById('sOdo').value = document.getElementById('display-odo').innerText.split(' ')[0];
+        new bootstrap.Modal(document.getElementById('serviceModal')).show();
+    }
+    async function submitMultiService() {
+        const names = Array.from(document.querySelectorAll('#multi-select-list input:checked')).map(cb => cb.value);
+        if(!names.length) return;
+        showLoader();
+        await fetch(API_URL, {method:"POST", mode:"no-cors", body:JSON.stringify({action:"logService", ownerId:currentOwnerId, itemNames:names, date:document.getElementById('sDate').value, odo:parseInt(document.getElementById('sOdo').value)})});
+        setTimeout(() => location.reload(), 1500);
+    }
     function toggleOdoInput() { const el = document.getElementById('update-odo-section'); el.style.display = el.style.display==='none'?'block':'none'; document.getElementById('new-odo-date').value = new Date().toISOString().split('T')[0]; }
     async function submitOdo() { const odo = document.getElementById('new-odo-input').value; if(!odo) return; showLoader(); await fetch(API_URL, {method:"POST", mode:"no-cors", body:JSON.stringify({action:"updateOdo", ownerId:currentOwnerId, odo:parseInt(odo), date:document.getElementById('new-odo-date').value})}); setTimeout(() => location.reload(), 1500); }
-    async function createNewVehicle() { const name = document.getElementById('new-v-name').value, odo = document.getElementById('new-v-odo').value; if(!name || !odo) return alert("請填寫資料"); showLoader(); const id = 'BIKE-' + Math.random().toString(36).substr(2,6).toUpperCase(); await fetch(API_URL, {method:"POST", mode:"no-cors", body:JSON.stringify({action:"createVehicle", ownerId:id, name:name, odo:parseInt(odo)})}); setTimeout(() => { window.location.search = `?id=${id}`; }, 1500); }
+    async function createNewVehicle() { const name = document.getElementById('new-v-name').value, odo = document.getElementById('new-v-odo').value; if(!name || !odo) return alert("請填資料"); showLoader(); const id = 'BIKE-' + Math.random().toString(36).substr(2,6).toUpperCase(); await fetch(API_URL, {method:"POST", mode:"no-cors", body:JSON.stringify({action:"createVehicle", ownerId:id, name:name, odo:parseInt(odo)})}); setTimeout(() => { window.location.search = `?id=${id}`; }, 1500); }
 </script>
 </body>
 </html>
