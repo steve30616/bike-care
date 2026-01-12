@@ -6,100 +6,115 @@
     <title>機車保養管家 Elite</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f4f6f9; font-family: -apple-system, sans-serif; padding-bottom: 100px; }
+        body { background-color: #f8fafc; font-family: -apple-system, sans-serif; padding-bottom: 120px; }
         .container { max-width: 500px; }
         #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
         .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #0d6efd; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        /* 卡片樣式 */
-        .card-item { border-radius: 20px; border: 2px solid transparent; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 15px; cursor: pointer; background: white; padding: 20px; transition: 0.3s; }
+        /* 頂部區域 */
+        .header-box { padding: 25px 0; border-radius: 0 0 30px 30px; background: white; transition: background 0.4s; margin-bottom: 25px; box-shadow: 0 2px 15px rgba(0,0,0,0.04); }
+        .header-warning { background-color: #e11d48 !important; color: white !important; }
+        .header-warning .text-muted { color: rgba(255,255,255,0.8) !important; }
+        .header-warning .badge { background-color: white !important; color: #e11d48 !important; }
+
+        /* 卡片設計 */
+        .card-item { border-radius: 20px; border: none; border-left: 8px solid #10b981; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 18px; cursor: pointer; background: white; padding: 20px; transition: 0.3s; }
+        .card-expired { background-color: #fff1f2; border-left-color: #e11d48; box-shadow: 0 4px 20px rgba(225, 29, 72, 0.15); }
         
-        /* 過期時的整格變紅 */
-        .card-expired { background-color: #fff5f5; border-color: #feb2b2; }
-        .card-expired .progress { background-color: #fed7d7; }
+        .status-danger { color: #e11d48 !important; } 
+        .status-ok { color: #10b981 !important; }
+        .progress { height: 10px; border-radius: 10px; background-color: #f1f5f9; }
         
-        .status-danger { color: #dc3545 !important; } 
-        .status-ok { color: #198754 !important; }
-        .progress { height: 8px; border-radius: 10px; background-color: #eee; }
+        /* 底部固定按鈕 */
+        .btn-fab { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; border-radius: 35px; padding: 18px; font-weight: 800; border: none; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); z-index: 100; transition: 0.4s; }
+        .btn-fab-warning { background-color: #e11d48 !important; animation: pulse-red 2s infinite; }
         
-        .btn-fab { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; border-radius: 30px; padding: 15px; font-weight: bold; box-shadow: 0 4px 15px rgba(13, 110, 253, 0.3); z-index: 100; }
-        .mode-btn { border-radius: 12px; border: 2px solid #f0f0f0; padding: 12px; cursor: pointer; transition: 0.2s; background: white; text-align: center; }
+        @keyframes pulse-red {
+            0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.7); }
+            70% { transform: translateX(-50%) scale(1.05); box-shadow: 0 0 0 15px rgba(225, 29, 72, 0); }
+            100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); }
+        }
+
+        .mode-btn { border-radius: 15px; border: 2px solid #f1f5f9; padding: 15px; cursor: pointer; transition: 0.2s; background: white; text-align: center; font-size: 0.9rem; }
         .mode-btn.active { border-color: #0d6efd; background-color: #f0f7ff; color: #0d6efd; font-weight: bold; }
-        .item-label-danger { color: #dc3545; font-weight: bold; }
-        .item-label-success { color: #198754; }
-        .category-header { font-size: 0.9rem; font-weight: bold; color: #6c757d; margin: 25px 0 10px 5px; }
-        .warning-text { color: #dc3545; font-size: 0.9rem; margin-left: 8px; }
+        .item-label-danger { color: #e11d48; font-weight: bold; }
+        .category-header { font-size: 0.85rem; font-weight: 800; color: #94a3b8; margin: 30px 0 12px 5px; letter-spacing: 1px; }
     </style>
 </head>
 <body>
 
 <div id="loader"><div class="spinner"></div><div class="mt-2 text-primary fw-bold">同步中...</div></div>
 
-<div id="app" class="container py-4">
-    <div id="setup-view" style="display:none;">
-        <h2 class="fw-bold text-center mb-4">🚲 建立機車檔案</h2>
-        <div class="card p-4 shadow-sm border-0">
-            <input type="text" id="new-v-name" class="form-control mb-3" placeholder="機車名稱">
+<div id="app">
+    <div id="setup-view" class="container py-5" style="display:none;">
+        <h2 class="fw-bold text-center mb-4">建立車輛檔案</h2>
+        <div class="card p-4 shadow-sm border-0" style="border-radius:25px;">
+            <input type="text" id="new-v-name" class="form-control mb-3" placeholder="車輛名稱">
             <input type="number" id="new-v-odo" class="form-control mb-4" placeholder="總里程 (km)">
-            <button onclick="createNewVehicle()" class="btn btn-primary w-100 py-3 fw-bold">開始紀錄</button>
+            <button onclick="createNewVehicle()" class="btn btn-primary w-100 py-3 fw-bold">開啟紀錄</button>
         </div>
     </div>
 
     <div id="main-view" style="display:none;">
-        <div class="d-flex justify-content-between align-items-end mb-4 px-2">
-            <div>
-                <h2 class="fw-bold mb-0 text-primary">
-                    <span id="display-name">---</span><span id="name-warning" class="warning-text" style="display:none;">⚠️ 需保養</span>
-                </h2>
-                <small class="text-muted">點擊卡片調整提醒方式</small>
-            </div>
-            <div class="text-end"><span class="badge bg-dark fs-6" id="display-odo">--- km</span></div>
-        </div>
-        <button onclick="toggleOdoInput()" class="btn btn-white bg-white w-100 mb-3 shadow-sm py-2" style="border-radius:12px;">📍 更新目前總里程</button>
-        <div id="update-odo-section" style="display:none;" class="card p-3 mb-4 border-0 shadow-sm">
-            <div class="row g-2">
-                <div class="col-6"><input type="number" id="new-odo-input" class="form-control" placeholder="里程"></div>
-                <div class="col-6"><input type="date" id="new-odo-date" class="form-control"></div>
-                <div class="col-12 mt-2"><button onclick="submitOdo()" class="btn btn-dark w-100">更新</button></div>
+        <div id="header-area" class="header-box">
+            <div class="container">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="fw-bold mb-0" id="display-name">---</h2>
+                        <small class="text-muted" id="header-subtext">目前狀態正常</small>
+                    </div>
+                    <span class="badge bg-dark fs-6" id="display-odo" style="border-radius:12px; padding: 10px 15px;">--- km</span>
+                </div>
             </div>
         </div>
-        <div id="items-container"></div>
+        
+        <div class="container text-center">
+            <button onclick="toggleOdoInput()" class="btn btn-white bg-white w-100 mb-4 shadow-sm py-2 border-0" style="border-radius:15px; color: #64748b; font-weight: 600;">更新里程紀錄</button>
+            <div id="update-odo-section" style="display:none;" class="card p-3 mb-4 border-0 shadow-sm text-start">
+                <div class="row g-2">
+                    <div class="col-6"><label class="small fw-bold mb-1">里程數</label><input type="number" id="new-odo-input" class="form-control"></div>
+                    <div class="col-6"><label class="small fw-bold mb-1">日期</label><input type="date" id="new-odo-date" class="form-control"></div>
+                    <div class="col-12 mt-2"><button onclick="submitOdo()" class="btn btn-dark w-100 py-2">確認更新</button></div>
+                </div>
+            </div>
+            <div id="items-container"></div>
+        </div>
     </div>
 </div>
 
-<button id="fab-btn" class="btn btn-primary btn-fab" onclick="openServiceModal()" style="display:none;">➕ 登記保養項目</button>
+<button id="fab-btn" class="btn btn-primary btn-fab" onclick="openServiceModal()" style="display:none;">登記保養項目</button>
 
-<div class="modal fade" id="serviceModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:25px;">
-    <div class="modal-header border-0 pb-0 px-4 pt-4"><h5 class="modal-title fw-bold">保養登記</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal fade" id="serviceModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;">
+    <div class="modal-header border-0 pb-0 px-4 pt-4"><h5 class="modal-title fw-bold">保養登記清單</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
     <div class="modal-body px-4">
-        <div id="multi-select-list" class="mb-3 p-2 bg-light rounded" style="max-height:350px; overflow-y:auto;"></div>
-        <div class="row g-2 mb-3">
-            <div class="col-6"><label class="small fw-bold">日期</label><input type="date" id="sDate" class="form-control"></div>
-            <div class="col-6"><label class="small fw-bold">里程</label><input type="number" id="sOdo" class="form-control"></div>
+        <div id="multi-select-list" class="mb-4 p-2 bg-light rounded" style="max-height:350px; overflow-y:auto;"></div>
+        <div class="row g-2 mb-4">
+            <div class="col-6"><label class="small fw-bold">本次保養日期</label><input type="date" id="sDate" class="form-control"></div>
+            <div class="col-6"><label class="small fw-bold">本次保養里程</label><input type="number" id="sOdo" class="form-control"></div>
         </div>
-        <button onclick="submitMultiService()" class="btn btn-primary w-100 py-3 fw-bold mb-3 shadow-sm">確認完成登記</button>
+        <button onclick="submitMultiService()" class="btn btn-primary w-100 py-3 fw-bold mb-3 shadow-sm" style="border-radius:15px;">完成登記</button>
     </div>
 </div></div></div>
 
-<div class="modal fade" id="intervalModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:25px;">
+<div class="modal fade" id="intervalModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;">
     <div class="modal-body p-4 text-center">
         <h5 id="intItemName" class="fw-bold mb-4">調整提醒週期</h5>
         <div class="row g-2 mb-4">
-            <div class="col-6"><div id="mode-km" class="mode-btn" onclick="setMode('KM')">方式一<br><small>按里程提醒</small></div></div>
-            <div class="col-6"><div id="mode-mon" class="mode-btn" onclick="setMode('MON')">方式二<br><small>按日期提醒</small></div></div>
+            <div class="col-6"><div id="mode-km" class="mode-btn" onclick="setMode('KM')">按里程數<br>km</div></div>
+            <div class="col-6"><div id="mode-mon" class="mode-btn" onclick="setMode('MON')">按日期<br>月份</div></div>
         </div>
-        <div id="input-km-area" class="mb-3" style="display:none;">
-            <label class="small fw-bold text-primary">里程間隔 (km)</label>
-            <input type="number" id="newIntKm" class="form-control form-control-lg mb-1">
-            <div id="hintKm" class="small text-muted"></div>
+        <div id="input-km-area" class="mb-3 text-start" style="display:none;">
+            <label class="small fw-bold text-primary mb-1">里程週期 (km)</label>
+            <input type="number" id="newIntKm" class="form-control form-control-lg">
+            <div id="hintKm" class="small text-muted mt-1"></div>
         </div>
-        <div id="input-mon-area" class="mb-4" style="display:none;">
-            <label class="small fw-bold text-primary">時間間隔 (月)</label>
-            <input type="number" id="newIntMon" class="form-control form-control-lg mb-1">
-            <div id="hintMon" class="small text-muted"></div>
+        <div id="input-mon-area" class="mb-4 text-start" style="display:none;">
+            <label class="small fw-bold text-primary mb-1">時間週期 (月)</label>
+            <input type="number" id="newIntMon" class="form-control form-control-lg">
+            <div id="hintMon" class="small text-muted mt-1"></div>
         </div>
-        <button onclick="submitNewInterval()" class="btn btn-dark w-100 py-3 fw-bold" style="border-radius:15px;">儲存並切換</button>
+        <button onclick="submitNewInterval()" class="btn btn-dark w-100 py-3 fw-bold" style="border-radius:18px;">確認儲存</button>
     </div>
 </div></div></div>
 
@@ -122,26 +137,37 @@
             document.getElementById('display-name').innerText = data.vehicleName;
             document.getElementById('display-odo').innerText = data.currentOdo + " km";
             
-            // 檢查是否有任何項目需要保養
-            const needsMaintenance = allItems.some(item => item.status === "Expired");
-            document.getElementById('name-warning').style.display = needsMaintenance ? "inline" : "none";
+            const hasExpired = allItems.some(item => item.status === "Expired");
+            const header = document.getElementById('header-area');
+            const subtext = document.getElementById('header-subtext');
+            const fab = document.getElementById('fab-btn');
+
+            if (hasExpired) {
+                header.classList.add('header-warning');
+                subtext.innerText = "注意：有項目已到保養期限";
+                fab.classList.add('btn-fab-warning');
+            } else {
+                header.classList.remove('header-warning');
+                subtext.innerText = "目前車況良好";
+                fab.classList.remove('btn-fab-warning');
+            }
 
             const container = document.getElementById('items-container');
             container.innerHTML = "";
             ["耗材更換類", "系統檢測類"].forEach(cat => {
                 const items = data.items.filter(i => i.category === cat);
                 if (items.length > 0) {
-                    container.innerHTML += `<div class="category-header text-uppercase letter-spacing-1">${cat}</div>`;
+                    container.innerHTML += `<div class="category-header text-uppercase">${cat}</div>`;
                     items.forEach(item => {
                         const isExpired = item.status === "Expired";
                         const cardClass = isExpired ? "card-item card-expired" : "card-item";
-                        const statusClass = isExpired ? "status-danger" : "status-ok";
+                        const statusClass = isExpired ? "status-danger fw-bold" : "status-ok fw-bold";
                         
                         container.innerHTML += `
                             <div class="${cardClass}" onclick="openIntervalModal('${item.name}',${item.intKm},${item.intMon},${item.offKm},${item.offMon},'${item.mode}')">
-                                <div class="d-flex justify-content-between mb-2">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
                                     <div class="fw-bold fs-5">${item.name}</div>
-                                    <div class="${statusClass} fw-bold">剩 ${item.displayValue}</div>
+                                    <div class="${statusClass}">剩 ${item.displayValue}</div>
                                 </div>
                                 <div class="progress"><div class="progress-bar ${isExpired ?'bg-danger':'bg-success'}" style="width:${item.progress}%"></div></div>
                             </div>`;
@@ -149,7 +175,7 @@
                 }
             });
             document.getElementById('main-view').style.display='block';
-        } catch (e) { alert("讀取失敗"); }
+        } catch (e) { alert("讀取連線失敗"); }
         hideLoader();
     }
 
@@ -164,8 +190,8 @@
     function openIntervalModal(name, k, m, ok, om, mode) {
         itemToEdit = name; document.getElementById('intItemName').innerText = name;
         document.getElementById('newIntKm').value = k; document.getElementById('newIntMon').value = m;
-        document.getElementById('hintKm').innerText = `💡 官方建議：${ok} km`; 
-        document.getElementById('hintMon').innerText = `💡 官方建議：${om} 個月`;
+        document.getElementById('hintKm').innerText = `原廠建議：${ok} km`; 
+        document.getElementById('hintMon').innerText = `原廠建議：${om} 個月`;
         setMode(mode || "KM");
         new bootstrap.Modal(document.getElementById('intervalModal')).show();
     }
@@ -180,11 +206,10 @@
         const list = document.getElementById('multi-select-list'); list.innerHTML = "";
         allItems.forEach(i => {
             const isDanger = i.status === "Expired";
-            const labelClass = isDanger ? "item-label-danger" : "item-label-success";
             list.innerHTML += `
                 <div class="form-check py-3 border-bottom d-flex align-items-center">
-                    <input class="form-check-input ms-0 me-3" type="checkbox" value="${i.name}" id="c-${i.name}" style="width:22px; height:22px; flex-shrink:0;">
-                    <label class="form-check-label d-block ${labelClass} w-100" for="c-${i.name}">
+                    <input class="form-check-input ms-0 me-3" type="checkbox" value="${i.name}" id="c-${i.name}" style="width:24px; height:24px;">
+                    <label class="form-check-label d-block w-100 ${isDanger ? 'item-label-danger' : 'text-success'}" for="c-${i.name}">
                         ${i.name} <span class="text-muted fw-normal small ms-2">(剩 ${i.displayValue})</span>
                     </label>
                 </div>`;
@@ -196,7 +221,7 @@
 
     async function submitMultiService() {
         const names = Array.from(document.querySelectorAll('#multi-select-list input:checked')).map(cb => cb.value);
-        if(names.length === 0) return alert("請至少勾選一個保養項目");
+        if(names.length === 0) return;
         showLoader();
         await fetch(API_URL, {method:"POST", body:JSON.stringify({action:"logService", ownerId:currentOwnerId, itemNames:names, date:document.getElementById('sDate').value, odo:parseInt(document.getElementById('sOdo').value)})});
         location.reload();
