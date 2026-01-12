@@ -9,14 +9,14 @@
         body { background-color: #f8fafc; font-family: -apple-system, sans-serif; padding-bottom: 120px; }
         .container { max-width: 500px; }
         #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #0d6efd; border-radius: 50%; animation: spin 1s linear infinite; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #e11d48; border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         
-        .header-box { padding: 30px 0; border-radius: 0 0 35px 35px; background: white; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .header-box { padding: 30px 0; border-radius: 0 0 30px 30px; background: white; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .header-warning { background-color: #e11d48 !important; color: white !important; }
 
         .card-item { border-radius: 20px; border: none; border-left: 8px solid #10b981; box-shadow: 0 4px 12px rgba(0,0,0,0.04); margin-bottom: 15px; cursor: pointer; background: white; padding: 20px; transition: transform 0.1s; }
-        .card-item:active { transform: scale(0.98); }
+        .card-item:active { transform: scale(0.97); background-color: #fdfdfd; }
         .card-expired { background-color: #fff1f2; border-left-color: #e11d48; }
         
         .progress { height: 10px; border-radius: 10px; background-color: #f1f5f9; }
@@ -31,7 +31,7 @@
 </head>
 <body>
 
-<div id="loader"><div class="spinner"></div><div class="mt-2 text-primary fw-bold">連線中...</div></div>
+<div id="loader"><div class="spinner"></div><div class="mt-2 text-danger fw-bold">連線中...</div></div>
 
 <div id="app">
     <div id="setup-view" class="container py-5" style="display:none;">
@@ -73,20 +73,37 @@
 
 <button id="fab-btn" class="btn btn-primary btn-fab" onclick="openServiceModal()" style="display:none;">登記保養項目</button>
 
-<div class="modal fade" id="manageItemsModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;"><div class="modal-header border-0 pb-0 px-4 pt-4"><h5 class="modal-title fw-bold">管理追蹤項目</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body px-4"><div id="all-items-list" class="mb-4 p-2 bg-light rounded" style="max-height:450px; overflow-y:auto;"></div><button onclick="submitManageItems()" class="btn btn-primary w-100 py-3 fw-bold mb-3 shadow-sm">儲存設定</button></div></div></div></div>
+<div class="modal fade" id="manageItemsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;">
+        <div class="modal-header border-0 pb-0 px-4 pt-4"><h5 class="modal-title fw-bold">管理追蹤項目</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body px-4"><div id="all-items-list" class="mb-4 p-2 bg-light rounded" style="max-height:450px; overflow-y:auto;"></div>
+        <button onclick="submitManageItems()" class="btn btn-primary w-100 py-3 fw-bold mb-3 shadow-sm">儲存變更</button></div>
+    </div></div>
+</div>
 
-<div class="modal fade" id="serviceModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;"><div class="modal-header border-0 pb-0 px-4 pt-4"><h5 class="modal-title fw-bold">保養登記</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body px-4"><div id="multi-select-list" class="mb-4 p-1 bg-light rounded" style="max-height:350px; overflow-y:auto;"></div><div class="row g-2 mb-4"><div class="col-6"><input type="date" id="sDate" class="form-control"></div><div class="col-6"><input type="number" id="sOdo" class="form-control"></div></div><button onclick="submitMultiService()" class="btn btn-primary w-100 py-3 fw-bold mb-3 shadow-sm">確認登記</button></div></div></div></div>
+<div class="modal fade" id="serviceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;">
+        <div class="modal-header border-0 pb-0 px-4 pt-4"><h5 class="modal-title fw-bold">登記保養</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body px-4"><div id="multi-select-list" class="mb-4 p-1 bg-light rounded" style="max-height:350px; overflow-y:auto;"></div>
+        <div class="row g-2 mb-4"><div class="col-6"><input type="date" id="sDate" class="form-control"></div><div class="col-6"><input type="number" id="sOdo" class="form-control"></div></div>
+        <button onclick="submitMultiService()" class="btn btn-primary w-100 py-3 fw-bold mb-3 shadow-sm">確認登記</button></div>
+    </div></div>
+</div>
 
-<div class="modal fade" id="intervalModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;"><div class="modal-body p-4 text-center">
-    <h5 id="intItemName" class="fw-bold mb-4">設定提醒週期</h5>
-    <div class="d-flex gap-2 mb-4">
-        <div id="mode-km" class="mode-btn" onclick="setMode('KM')">按里程數</div>
-        <div id="mode-mon" class="mode-btn" onclick="setMode('MON')">按日期</div>
-    </div>
-    <div id="input-km-area" class="mb-3 text-start" style="display:none;"><label class="small fw-bold">里程週期 (km)</label><input type="number" id="newIntKm" class="form-control"></div>
-    <div id="input-mon-area" class="mb-4 text-start" style="display:none;"><label class="small fw-bold">月份週期 (月)</label><input type="number" id="newIntMon" class="form-control"></div>
-    <button onclick="submitNewInterval()" class="btn btn-dark w-100 py-3 fw-bold" style="border-radius:15px;">儲存修改</button>
-</div></div></div></div>
+<div class="modal fade" id="intervalModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;">
+        <div class="modal-body p-4 text-center">
+            <h5 id="intItemName" class="fw-bold mb-4">設定提醒週期</h5>
+            <div class="d-flex gap-2 mb-4">
+                <div id="mode-km" class="mode-btn" onclick="setMode('KM')">按里程數</div>
+                <div id="mode-mon" class="mode-btn" onclick="setMode('MON')">按日期</div>
+            </div>
+            <div id="input-km-area" class="mb-3 text-start" style="display:none;"><label class="small fw-bold">里程週期 (km)</label><input type="number" id="newIntKm" class="form-control"></div>
+            <div id="input-mon-area" class="mb-4 text-start" style="display:none;"><label class="small fw-bold">時間週期 (月)</label><input type="number" id="newIntMon" class="form-control"></div>
+            <button onclick="submitNewInterval()" class="btn btn-dark w-100 py-3 fw-bold" style="border-radius:15px;">儲存修改</button>
+        </div>
+    </div></div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -97,6 +114,9 @@
     window.onload = () => { if (!currentOwnerId) { hideLoader(); document.getElementById('setup-view').style.display='block'; } else { document.getElementById('fab-btn').style.display='block'; loadVehicleData(); } };
     function showLoader() { document.getElementById('loader').style.display='flex'; }
     function hideLoader() { document.getElementById('loader').style.display='none'; }
+
+    // 強制刷新頁面函數
+    function reloadPage() { setTimeout(() => { location.reload(); }, 1200); }
 
     async function loadVehicleData() {
         showLoader();
@@ -115,11 +135,11 @@
 
             if (hasExpired) {
                 header.classList.add('header-warning');
-                subtext.innerText = "🚨 需保養提醒";
+                subtext.innerText = "注意：有項目已到保養期限";
                 fab.classList.add('btn-fab-warning');
             } else {
                 header.classList.remove('header-warning');
-                subtext.innerText = "目前的車況良好";
+                subtext.innerText = "目前車況良好";
                 fab.classList.remove('btn-fab-warning');
             }
 
@@ -129,12 +149,26 @@
             
             categories.forEach(cat => {
                 const items = activeItems.filter(i => i.category === cat);
-                container.innerHTML += `<div class="category-header">${cat}</div>`;
+                const catHeader = document.createElement('div');
+                catHeader.className = 'category-header text-uppercase';
+                catHeader.innerText = cat;
+                container.appendChild(catHeader);
+
                 items.forEach(item => {
                     const card = document.createElement('div');
                     card.className = `card-item ${item.status === 'Expired' ? 'card-expired' : ''}`;
-                    // 直接綁定點擊事件，避免 HTML 字符串解析錯誤
-                    card.onclick = () => openIntervalModal(item.name, item.intKm, item.intMon, item.offKm, item.offMon, item.mode);
+                    
+                    // 修正點擊事件：使用閉包確保數據正確傳遞
+                    card.addEventListener('click', function() {
+                        openIntervalModal(
+                            item.name, 
+                            Number(item.intKm), 
+                            Number(item.intMon), 
+                            Number(item.offKm), 
+                            Number(item.offMon), 
+                            item.mode
+                        );
+                    });
                     
                     card.innerHTML = `
                         <div class="d-flex justify-content-between mb-2">
@@ -147,7 +181,7 @@
                 });
             });
             document.getElementById('main-view').style.display='block';
-        } catch (e) { alert("連線失敗"); }
+        } catch (e) { alert("同步連線失敗，請檢查網路。"); }
         hideLoader();
     }
 
@@ -159,12 +193,15 @@
         document.getElementById('hintKm').innerText = `原廠建議：${ok} km`; 
         document.getElementById('hintMon').innerText = `原廠建議：${om} 月`;
         setMode(mode || "KM");
-        new bootstrap.Modal(document.getElementById('intervalModal')).show();
+        
+        // 顯示 Modal
+        const myModal = new bootstrap.Modal(document.getElementById('intervalModal'));
+        myModal.show();
     }
 
     async function submitNewInterval() {
         showLoader();
-        const body = {
+        const payload = {
             action: "updateInterval",
             ownerId: currentOwnerId,
             itemName: itemToEdit,
@@ -172,8 +209,8 @@
             newMon: parseInt(document.getElementById('newIntMon').value),
             mode: selectedMode
         };
-        await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(body) });
-        setTimeout(() => location.reload(), 1500);
+        await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+        reloadPage();
     }
 
     function setMode(m) {
@@ -184,7 +221,6 @@
         document.getElementById('input-mon-area').style.display = (m === 'MON') ? 'block' : 'none';
     }
 
-    // 其他管理、更新功能
     function openManageItemsModal() {
         const list = document.getElementById('all-items-list');
         list.innerHTML = "";
@@ -195,31 +231,36 @@
         });
         new bootstrap.Modal(document.getElementById('manageItemsModal')).show();
     }
+
     async function submitManageItems() {
         const activeItems = Array.from(document.querySelectorAll('#all-items-list input:checked')).map(cb => cb.value);
         showLoader();
         await fetch(API_URL, {method:"POST", mode:"no-cors", body:JSON.stringify({action:"toggleItems", ownerId:currentOwnerId, activeItems:activeItems})});
-        setTimeout(() => location.reload(), 1500);
+        reloadPage();
     }
+
     function openServiceModal() {
         const list = document.getElementById('multi-select-list'); list.innerHTML = "";
         allItems.filter(i => i.isActive).forEach(i => {
-            list.innerHTML += `<div class="form-check py-3 border-bottom d-flex align-items-center"><input class="form-check-input ms-0 me-3" type="checkbox" value="${i.name}" id="c-${i.name}" style="width:24px; height:24px;"><label class="form-check-label d-block w-100" for="c-${i.name}">${i.name}</label></div>`;
+            const isExp = i.status === "Expired";
+            list.innerHTML += `<div class="form-check py-3 border-bottom d-flex align-items-center"><input class="form-check-input ms-0 me-3" type="checkbox" value="${i.name}" id="c-${i.name}" style="width:24px; height:24px;"><label class="form-check-label d-block w-100 ${isExp?'text-danger fw-bold':'text-success'}" for="c-${i.name}">${i.name} (剩 ${i.displayValue})</label></div>`;
         });
         document.getElementById('sDate').value = new Date().toISOString().split('T')[0];
         document.getElementById('sOdo').value = document.getElementById('display-odo').innerText.split(' ')[0];
         new bootstrap.Modal(document.getElementById('serviceModal')).show();
     }
+
     async function submitMultiService() {
         const names = Array.from(document.querySelectorAll('#multi-select-list input:checked')).map(cb => cb.value);
         if(!names.length) return;
         showLoader();
         await fetch(API_URL, {method:"POST", mode:"no-cors", body:JSON.stringify({action:"logService", ownerId:currentOwnerId, itemNames:names, date:document.getElementById('sDate').value, odo:parseInt(document.getElementById('sOdo').value)})});
-        setTimeout(() => location.reload(), 1500);
+        reloadPage();
     }
+
     function toggleOdoInput() { const el = document.getElementById('update-odo-section'); el.style.display = el.style.display==='none'?'block':'none'; document.getElementById('new-odo-date').value = new Date().toISOString().split('T')[0]; }
-    async function submitOdo() { const odo = document.getElementById('new-odo-input').value; if(!odo) return; showLoader(); await fetch(API_URL, {method:"POST", mode:"no-cors", body:JSON.stringify({action:"updateOdo", ownerId:currentOwnerId, odo:parseInt(odo), date:document.getElementById('new-odo-date').value})}); setTimeout(() => location.reload(), 1500); }
-    async function createNewVehicle() { const name = document.getElementById('new-v-name').value, odo = document.getElementById('new-v-odo').value; if(!name || !odo) return alert("請填資料"); showLoader(); const id = 'BIKE-' + Math.random().toString(36).substr(2,6).toUpperCase(); await fetch(API_URL, {method:"POST", mode:"no-cors", body:JSON.stringify({action:"createVehicle", ownerId:id, name:name, odo:parseInt(odo)})}); setTimeout(() => { window.location.search = `?id=${id}`; }, 1500); }
+    async function submitOdo() { const odo = document.getElementById('new-odo-input').value; if(!odo) return; showLoader(); await fetch(API_URL, {method:"POST", mode:"no-cors", body:JSON.stringify({action:"updateOdo", ownerId:currentOwnerId, odo:parseInt(odo), date:document.getElementById('new-odo-date').value})}); reloadPage(); }
+    async function createNewVehicle() { const name = document.getElementById('new-v-name').value, odo = document.getElementById('new-v-odo').value; if(!name || !odo) return alert("請填寫資料"); showLoader(); const id = 'BIKE-' + Math.random().toString(36).substr(2,6).toUpperCase(); await fetch(API_URL, {method:"POST", mode:"no-cors", body:JSON.stringify({action:"createVehicle", ownerId:id, name:name, odo:parseInt(odo)})}); setTimeout(() => { window.location.search = `?id=${id}`; }, 1500); }
 </script>
 </body>
 </html>
