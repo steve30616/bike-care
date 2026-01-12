@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>機車保養小幫手</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: -apple-system, sans-serif; }
+        .card { border-radius: 15px; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .progress { height: 10px; border-radius: 5px; }
+        .btn-update { border-radius: 25px; padding: 10px 20px; font-weight: bold; }
+        .category-header { font-size: 0.9rem; color: #6c757d; margin-top: 20px; border-left: 4px solid #0d6efd; padding-left: 8px; }
+        .status-badge { font-size: 0.8rem; padding: 3px 8px; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<div id="app" class="container py-4">
+    <div id="setup-view" style="display:none;">
+        <h2 class="mb-4 text-center">🚲 歡迎使用</h2>
+        <div class="card p-4">
+            <h5>設定您的第一台機車</h5>
+            <div class="mb-3">
+                <label class="form-label">機車名稱</label>
+                <input type="text" id="new-vehicle-name" class="form-control" placeholder="例如：我的小黑">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">目前總里程</label>
+                <input type="number" id="new-vehicle-odo" class="form-control" placeholder="例如：12500">
+            </div>
+            <button onclick="createNewVehicle()" class="btn btn-primary w-100 btn-update">開始使用</button>
+        </div>
+    </div>
+
+    <div id="main-view" style="display:none;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 id="display-vehicle-name">載入中...</h3>
+            <span class="badge bg-dark" id="display-odo">--- km</span>
+        </div>
+
+        <button onclick="showUpdateOdoModal()" class="btn btn-outline-primary w-100 mb-4 btn-update">
+            📍 更新目前里程
+        </button>
+
+        <div id="items-container">
+            </div>
+    </div>
+</div>
+
+<script>
+// 請替換成你部署 GAS 後得到的網頁應用程式 URL
+const API_URL = "你的_GAS_網頁應用程式網址"; 
+
+let currentOwnerId = new URLSearchParams(window.location.search).get('id');
+
+// 頁面載入後執行的動作
+window.onload = function() {
+    if (!currentOwnerId) {
+        document.getElementById('setup-view').style.display = 'block';
+    } else {
+        loadVehicleData();
+    }
+};
+
+// 從 GAS 抓取資料
+async function loadVehicleData() {
+    document.getElementById('main-view').style.display = 'block';
+    try {
+        const response = await fetch(`${API_URL}?ownerId=${currentOwnerId}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            alert("找不到資料，請重新建立或檢查連結");
+            location.href = window.location.pathname; // 回到首頁
+            return;
+        }
+
+        renderDashboard(data);
+    } catch (e) {
+        console.error("載入失敗", e);
+    }
+}
+
+// 渲染畫面
+function renderDashboard(data) {
+    document.getElementById('display-vehicle-name').innerText = data.vehicleName;
+    document.getElementById('display-odo').innerText = data.currentOdo + " km";
+
+    const container = document.getElementById('items-container');
+    container.innerHTML = ""; // 清空舊資料
+
+    // 按類別分組渲染
+    const categories = ["耗材更換類", "系統檢測類"];
+    categories.forEach(cat => {
+        const catItems = data.items.filter(i => i.category === cat);
+        if (catItems.length > 0) {
+            container.innerHTML += `<div class="category-header">${cat}</div>`;
+            catItems.forEach(item => {
+                const statusColor = item.status === "Expired" ? "danger" : (item.status === "Warning" ? "warning" : "success");
+                const progressWidth = Math.max(0, Math.min(100, (item.remKm / item.intervalKm) * 100));
+                
+                container.innerHTML += `
+                    <div class="card p-3 mt-2" onclick="logService('${item.name}')">
+                        <div class="d-flex justify-content-between mb-1">
+                            <strong>${item.name}</strong>
+                            <span class="status-badge bg-${statusColor}-subtle text-${statusColor}">
+                                ${item.remKm !== null ? '剩餘 ' + item.remKm + ' km' : '檢查項目'}
+                            </span>
+                        </div>
+                        <div class="progress">
+                            <div class="progress-bar bg-${statusColor}" style="width: ${progressWidth}%"></div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    });
+}
+
+// 新增機車邏輯
+async function createNewVehicle() {
+    const name = document.getElementById('new-vehicle-name').value;
+    const odo = document.getElementById('new-vehicle-odo').value;
+    const newId = 'BIKE-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+
+    if (!name || !odo) return alert("請填寫完整");
+
+    const payload = {
+        action: "createVehicle",
+        ownerId: newId,
+        name: name,
+        odo: parseInt(odo),
+        model: "DEFAULT" // 這裡可以進階做下拉選單選原廠型號
+    };
+
+    // 呼叫 GAS POST API
+    await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify(payload)
+    });
+
+    // 跳轉到專屬 ID 網址
+    window.location.search = `?id=${newId}`;
+}
+</script>
+</body>
+</html>
