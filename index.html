@@ -19,7 +19,18 @@
 </head>
 <body>
 
-<div id="loader">🚀 極速啟動中...</div>
+<div id="loader">🚀 啟動中...</div>
+
+<div id="setup-view" class="container py-5" style="display:none;">
+    <h2 class="fw-bold text-center mb-4">歡迎使用機車管家</h2>
+    <div class="card p-4 border-0 shadow-sm" style="border-radius:25px;">
+        <label class="small fw-bold mb-2">機車名稱</label>
+        <input type="text" id="new-v-name" class="form-control mb-3" placeholder="例如：勁戰六代">
+        <label class="small fw-bold mb-2">目前里程 (km)</label>
+        <input type="number" id="new-v-odo" class="form-control mb-4" placeholder="輸入目前總里程">
+        <button onclick="createNewVehicle()" class="btn btn-primary w-100 py-3 fw-bold">建立我的車庫</button>
+    </div>
+</div>
 
 <div id="main-view" style="display:none;">
     <div id="header-area" class="header-box text-center">
@@ -31,46 +42,20 @@
             <span class="badge bg-dark fs-6" id="display-odo">--- km</span>
         </div>
     </div>
-
     <div class="container">
         <div class="d-flex gap-2 mb-4">
             <button onclick="openOdoModal()" class="btn btn-white bg-white flex-grow-1 shadow-sm py-2 border-0 fw-bold" style="border-radius:15px;">更新里程</button>
-            <button onclick="location.reload()" class="btn btn-white bg-white shadow-sm py-2 border-0 fw-bold px-4" style="border-radius:15px;">同步</button>
+            <button onclick="location.reload()" class="btn btn-white bg-white shadow-sm py-2 border-0 fw-bold px-4" style="border-radius:15px;">刷新</button>
         </div>
         <div id="items-container"></div>
     </div>
 </div>
 
-<button class="btn btn-primary btn-fab" onclick="openServiceModal()">登記保養項目</button>
-
-<div class="modal fade" id="serviceModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius:30px;">
-            <div class="modal-body p-4">
-                <h5 class="fw-bold mb-3">保養登記</h5>
-                <div id="service-list" class="mb-3" style="max-height: 300px; overflow-y: auto;"></div>
-                <input type="number" id="sOdo" class="form-control mb-3" placeholder="保養時里程">
-                <button onclick="submitService()" class="btn btn-primary w-100 py-3 fw-bold">確認登記</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="intervalModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius:30px;">
-            <div class="modal-body p-4">
-                <h5 id="intItemName" class="fw-bold mb-4">設定提醒週期</h5>
-                <div class="mb-3"><label class="small fw-bold">里程週期 (km)</label><input type="number" id="newIntKm" class="form-control"></div>
-                <button onclick="submitInterval()" class="btn btn-dark w-100 py-3 fw-bold">儲存設定</button>
-            </div>
-        </div>
-    </div>
-</div>
+<button id="fab-btn" class="btn btn-primary btn-fab" style="display:none;" onclick="openServiceModal()">登記保養項目</button>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, onValue, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, onValue, update, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyAdEW0WDPPC9NrlagRJbppDQRdE7IznqVE",
@@ -85,19 +70,72 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const urlParams = new URLSearchParams(window.location.search);
-    const userId = urlParams.get('id') || "BIKE-NTND57";
+    const userId = urlParams.get('id');
 
-    let bikeData = null;
-
-    // 即時監聽資料庫
-    onValue(ref(db, 'users/' + userId), (snapshot) => {
-        bikeData = snapshot.val();
-        if (bikeData) {
-            renderDashboard(bikeData);
+    window.onload = () => {
+        if (!userId) {
+            document.getElementById('setup-view').style.display = 'block';
             document.getElementById('loader').style.display = 'none';
-            document.getElementById('main-view').style.display = 'block';
+        } else {
+            loadVehicleData();
         }
-    });
+    };
+
+    function loadVehicleData() {
+        onValue(ref(db, 'users/' + userId), (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                renderDashboard(data);
+                document.getElementById('main-view').style.display = 'block';
+                document.getElementById('fab-btn').style.display = 'block';
+                document.getElementById('loader').style.display = 'none';
+            } else {
+                window.location.href = window.location.pathname;
+            }
+        });
+    }
+
+    // --- 建立新車：根據 presets 初始化 ---
+    window.createNewVehicle = async function() {
+        const name = document.getElementById('new-v-name').value;
+        const odo = parseInt(document.getElementById('new-v-odo').value);
+        if (!name || isNaN(odo)) return alert("請填寫正確資訊");
+
+        document.getElementById('loader').style.display = 'flex';
+        
+        try {
+            // 讀取 Firebase 裡的原廠設定
+            const presetsSnap = await get(ref(db, 'presets'));
+            const presets = presetsSnap.val() || {};
+            
+            const userItems = {};
+            for (let itemName in presets) {
+                // 只加入 isDefault 為 true 的項目
+                if (presets[itemName].isDefault) {
+                    userItems[itemName] = {
+                        intKm: presets[itemName].intKm,
+                        intMon: presets[itemName].intMon,
+                        category: presets[itemName].category,
+                        lastKm: odo,
+                        lastDate: new Date().toISOString().split('T')[0],
+                        isActive: true,
+                        mode: "KM"
+                    };
+                }
+            }
+
+            const newId = 'BIKE-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+            await set(ref(db, 'users/' + newId), {
+                info: { name: name, odo: odo, lastSync: new Date().toISOString() },
+                items: userItems
+            });
+            
+            window.location.search = `?id=${newId}`;
+        } catch (error) {
+            alert("建立失敗: " + error.message);
+            document.getElementById('loader').style.display = 'none';
+        }
+    };
 
     function renderDashboard(data) {
         document.getElementById('display-name').innerText = data.info.name;
