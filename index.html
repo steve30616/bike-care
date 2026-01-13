@@ -18,7 +18,6 @@
         .category-header { font-size: 0.85rem; font-weight: 800; color: #94a3b8; margin: 30px 0 10px 5px; border-bottom: 1px solid #e2e8f0; }
         .mode-btn { border-radius: 15px; border: 2px solid #f1f5f9; padding: 15px; cursor: pointer; background: white; text-align: center; flex: 1; transition: 0.3s; }
         .mode-btn.active { border-color: #0d6efd; background-color: #f0f7ff; color: #0d6efd; font-weight: bold; }
-        /* 紅字樣式 */
         .text-expired { color: #e11d48 !important; font-weight: 800 !important; }
     </style>
 </head>
@@ -42,7 +41,7 @@
         <div class="container d-flex justify-content-between align-items-center">
             <div class="text-start">
                 <h2 class="fw-bold mb-0" id="display-name">---</h2>
-                <small id="header-subtext">車況同步中...</small>
+                <small id="header-subtext">同步中...</small>
             </div>
             <span class="badge bg-dark fs-6" id="display-odo">--- km</span>
         </div>
@@ -79,7 +78,27 @@
     </div>
 </div>
 
-<div class="modal fade" id="serviceModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;"><div class="modal-body p-4"><h5 class="fw-bold mb-3 text-center">保養登記</h5><div id="service-list" class="mb-3" style="max-height: 350px; overflow-y: auto;"></div><input type="number" id="sOdo" class="form-control mb-3 text-center fw-bold" placeholder="輸入保養里程"><button onclick="submitService()" class="btn btn-primary w-100 py-3 fw-bold">確認登記完成</button></div></div></div></div>
+<div class="modal fade" id="serviceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:30px;">
+            <div class="modal-body p-4">
+                <h5 class="fw-bold mb-3 text-center">保養登記</h5>
+                <div id="service-list" class="mb-3" style="max-height: 350px; overflow-y: auto;"></div>
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="small fw-bold ps-1">保養日期</label>
+                        <input type="date" id="sDate" class="form-control fw-bold" style="border-radius:10px;">
+                    </div>
+                    <div class="col-6">
+                        <label class="small fw-bold ps-1">里程 (km)</label>
+                        <input type="number" id="sOdo" class="form-control fw-bold text-center" style="border-radius:10px;">
+                    </div>
+                </div>
+                <button onclick="submitService()" class="btn btn-primary w-100 py-3 fw-bold">確認登記完成</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -119,7 +138,7 @@
         document.getElementById('display-name').innerText = data.info.name;
         document.getElementById('display-odo').innerText = data.info.odo + " km";
         const container = document.getElementById('items-container'); container.innerHTML = "";
-        let globalExpired = false;
+        let globalExp = false;
 
         const items = data.items;
         const activeCategories = [...new Set(Object.values(items).filter(i => i.isActive).map(i => i.category))];
@@ -128,8 +147,7 @@
             const hDiv = document.createElement('div'); hDiv.className = 'category-header'; hDiv.innerText = cat;
             container.appendChild(hDiv);
             Object.keys(items).forEach(key => {
-                const item = items[key];
-                if (!item.isActive || item.category !== cat) return;
+                const item = items[key]; if (!item.isActive || item.category !== cat) return;
                 
                 const mode = item.mode || "KM";
                 let remValue, progress, displayStr;
@@ -146,7 +164,7 @@
                     displayStr = `剩 ${remValue} 天`;
                 }
 
-                if (remValue <= 0) globalExpired = true;
+                if (remValue <= 0) globalExp = true;
                 const card = document.createElement('div');
                 card.className = `card-item ${remValue <= 0 ? 'card-expired' : ''}`;
                 card.onclick = () => window.openIntervalModal(key, item.intKm, item.intMon, mode);
@@ -154,8 +172,8 @@
                 container.appendChild(card);
             });
         });
-        document.getElementById('header-area').className = globalExpired ? 'header-box header-warning' : 'header-box';
-        document.getElementById('header-subtext').innerText = globalExpired ? "注意：有保養項目已到期" : "車況良好";
+        document.getElementById('header-area').className = globalExp ? 'header-box header-warning' : 'header-box';
+        document.getElementById('header-subtext').innerText = globalExp ? "注意：有保養項目已到期" : "車況良好";
     }
 
     // --- 各功能函數 ---
@@ -211,39 +229,27 @@
         bootstrap.Modal.getInstance(document.getElementById('manageModal')).hide();
     };
 
-    // --- 核心更新：保養登記紅字強化 ---
     window.openServiceModal = () => {
         const list = document.getElementById('service-list'); list.innerHTML = "";
         for (let key in bikeData.items) {
-            const item = bikeData.items[key];
-            if (!item.isActive) continue;
-            
-            // 判斷是否到期 (紅字邏輯)
-            let isExpired = false;
-            const mode = item.mode || "KM";
-            if (mode === "KM") {
-                isExpired = (item.lastKm + item.intKm) <= bikeData.info.odo;
-            } else {
-                const lastDate = item.lastDate ? new Date(item.lastDate) : new Date();
-                const nextDate = new Date(lastDate); nextDate.setMonth(nextDate.getMonth() + (item.intMon || 6));
-                isExpired = nextDate <= new Date();
+            const item = bikeData.items[key]; if (!item.isActive) continue;
+            let isExp = false;
+            if (item.mode === "KM") { isExp = (item.lastKm + item.intKm) <= bikeData.info.odo; }
+            else { 
+                const nextDate = new Date(item.lastDate || new Date()); nextDate.setMonth(nextDate.getMonth() + (item.intMon || 6));
+                isExp = nextDate <= new Date();
             }
-
-            list.innerHTML += `
-                <div class="form-check py-3 border-bottom d-flex align-items-center">
-                    <input class="form-check-input ms-0 me-3" type="checkbox" value="${key}" id="s-${key}" style="width:24px; height:24px;">
-                    <label class="form-check-label w-100 ${isExpired ? 'text-expired' : ''}" for="s-${key}">
-                        ${key} ${isExpired ? '<span class="small">(已到期)</span>' : ''}
-                    </label>
-                </div>`;
+            list.innerHTML += `<div class="form-check py-3 border-bottom d-flex align-items-center"><input class="form-check-input ms-0 me-3" type="checkbox" value="${key}" id="s-${key}" style="width:24px; height:24px;"><label class="form-check-label w-100 ${isExp ? 'text-expired' : ''}" for="s-${key}">${key}</label></div>`;
         }
         document.getElementById('sOdo').value = bikeData.info.odo;
+        document.getElementById('sDate').value = new Date().toISOString().split('T')[0];
         new bootstrap.Modal(document.getElementById('serviceModal')).show();
     };
 
     window.submitService = async () => {
         const sOdo = parseInt(document.getElementById('sOdo').value);
-        const updates = {}; const sDate = new Date().toISOString().split('T')[0];
+        const sDate = document.getElementById('sDate').value;
+        const updates = {};
         document.querySelectorAll('#service-list input:checked').forEach(cb => {
             updates[`users/${userId}/items/${cb.value}/lastKm`] = sOdo;
             updates[`users/${userId}/items/${cb.value}/lastDate`] = sDate;
