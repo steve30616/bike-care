@@ -24,7 +24,7 @@
 </head>
 <body>
 
-<div id="loader">🚀 極速啟動中...</div>
+<div id="loader">🚀 同步中...</div>
 
 <div id="setup-view" class="container py-5" style="display:none;">
     <h2 class="fw-bold text-center mb-4">歡迎使用機車管家</h2>
@@ -60,25 +60,9 @@
 
 <div class="modal fade" id="odoModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;"><div class="modal-body p-4 text-center"><h5 class="fw-bold mb-4">更新目前總里程</h5><input type="number" id="newTotalOdo" class="form-control mb-4 text-center fs-3 fw-bold" style="border-radius:15px;"><button onclick="submitOdo()" class="btn btn-primary w-100 py-3 fw-bold">確認更新</button></div></div></div></div>
 
-<div class="modal fade" id="manageModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;"><div class="modal-body p-4"><h5 class="fw-bold mb-3 text-center">全部項目管理</h5><div id="manage-list" class="mb-3" style="max-height: 400px; overflow-y: auto;"></div><button onclick="saveItemVisibility()" class="btn btn-primary w-100 py-3 fw-bold">儲存顯示設定</button></div></div></div></div>
+<div class="modal fade" id="manageModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;"><div class="modal-body p-4"><h5 class="fw-bold mb-3 text-center">項目顯示設定</h5><div id="manage-list" class="mb-3" style="max-height: 400px; overflow-y: auto;"></div><button onclick="saveItemVisibility()" class="btn btn-primary w-100 py-3 fw-bold">儲存並刷新</button></div></div></div></div>
 
-<div class="modal fade" id="intervalModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius:30px;">
-            <div class="modal-body p-4">
-                <h5 id="intItemName" class="fw-bold mb-4 text-center text-primary">---</h5>
-                <div class="d-flex gap-2 mb-4">
-                    <div id="mode-km" class="mode-btn" onclick="setEditMode('KM')">按里程</div>
-                    <div id="mode-mon" class="mode-btn" onclick="setEditMode('MON')">按時間</div>
-                </div>
-                <div id="input-km-area"><label class="small fw-bold text-muted mb-1">里程週期 (km)</label><input type="number" id="newIntKm" class="form-control fw-bold"><div id="hint-default-km" class="small text-primary mb-3 mt-1"></div></div>
-                <div id="input-mon-area"><label class="small fw-bold text-muted mb-1">時間週期 (月)</label><input type="number" id="newIntMon" class="form-control fw-bold"><div id="hint-default-mon" class="small text-primary mb-3 mt-1"></div></div>
-                <div class="info-hint"><div class="d-flex justify-content-between mb-1"><span>上次保養里程：</span><b id="history-km">---</b></div><div class="d-flex justify-content-between"><span>上次保養日期：</span><b id="history-date">---</b></div></div>
-                <button onclick="submitInterval()" class="btn btn-dark w-100 py-3 fw-bold mt-4" style="border-radius:15px;">儲存設定</button>
-            </div>
-        </div>
-    </div>
-</div>
+<div class="modal fade" id="intervalModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;"><div class="modal-body p-4"><h5 id="intItemName" class="fw-bold mb-4 text-center text-primary">---</h5><div class="d-flex gap-2 mb-4"><div id="mode-km" class="mode-btn" onclick="setEditMode('KM')">按里程</div><div id="mode-mon" class="mode-btn" onclick="setEditMode('MON')">按時間</div></div><div id="input-km-area"><label class="small fw-bold text-muted mb-1">里程週期 (km)</label><input type="number" id="newIntKm" class="form-control fw-bold"><div id="hint-default-km" class="small text-primary mb-3 mt-1"></div></div><div id="input-mon-area"><label class="small fw-bold text-muted mb-1">時間週期 (月)</label><input type="number" id="newIntMon" class="form-control fw-bold"><div id="hint-default-mon" class="small text-primary mb-3 mt-1"></div></div><div class="info-hint"><div class="d-flex justify-content-between mb-1"><span>上次保養里程：</span><b id="history-km">---</b></div><div class="d-flex justify-content-between"><span>上次保養日期：</span><b id="history-date">---</b></div></div><button onclick="submitInterval()" class="btn btn-dark w-100 py-3 fw-bold mt-4" style="border-radius:15px;">儲存設定</button></div></div></div></div>
 
 <div class="modal fade" id="serviceModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered"><div class="modal-content" style="border-radius:30px;"><div class="modal-body p-4"><h5 class="fw-bold mb-3 text-center">保養登記</h5><div id="service-list" class="mb-3" style="max-height: 350px; overflow-y: auto;"></div><div class="row g-2 mb-3"><div class="col-6"><label class="small fw-bold ps-1">日期</label><input type="date" id="sDate" class="form-control fw-bold"></div><div class="col-6"><label class="small fw-bold ps-1">里程</label><input type="number" id="sOdo" class="form-control fw-bold text-center"></div></div><button onclick="submitService()" class="btn btn-primary w-100 py-3 fw-bold">確認登記完成</button></div></div></div></div>
 
@@ -103,14 +87,15 @@
     let bikeData = null, editingItem = "", tempMode = "KM", globalPresets = {};
 
     window.onload = async () => { 
+        try {
+            const presetsSnap = await get(ref(db, 'presets'));
+            globalPresets = presetsSnap.val() || { "機油": { category: "引擎保養", intKm: 1000, intMon: 6, isDefault: true } };
+        } catch (e) { console.error(e); }
+
         if (!userId) { 
             document.getElementById('setup-view').style.display = 'block'; 
             document.getElementById('loader').style.display = 'none'; 
         } else { 
-            try {
-                const presetsSnap = await get(ref(db, 'presets'));
-                globalPresets = presetsSnap.val() || {};
-            } catch (e) { console.warn("Presets failed", e); }
             loadVehicleData(); 
         } 
     };
@@ -123,7 +108,7 @@
                 document.getElementById('main-view').style.display = 'block';
                 document.getElementById('fab-btn').style.display = 'block';
                 document.getElementById('loader').style.display = 'none';
-            } else { alert("ID 不存在"); window.location.href = window.location.pathname; }
+            } else { alert("ID 錯誤"); window.location.href = window.location.pathname; }
         });
     }
 
@@ -160,19 +145,19 @@
             });
         });
         document.getElementById('header-area').className = globalExp ? 'header-box header-warning' : 'header-box';
-        document.getElementById('header-subtext').innerText = globalExp ? "注意：有保養項目已到期" : "車況良好";
+        document.getElementById('header-subtext').innerText = globalExp ? "注意：有項目已到期" : "車況良好";
     }
 
-    // --- 介面綁定 ---
+    // --- 按鈕掛載 ---
     window.setEditMode = (m) => {
         tempMode = m;
         document.getElementById('mode-km').classList.toggle('active', m === 'KM');
         document.getElementById('mode-mon').classList.toggle('active', m === 'MON');
         document.getElementById('input-km-area').style.display = (m === 'KM') ? 'block' : 'none';
         document.getElementById('input-mon-area').style.display = (m === 'MON') ? 'block' : 'none';
-        const preset = globalPresets[editingItem] || {};
-        if (m === 'KM') document.getElementById('hint-default-km').innerText = `💡 原廠預設：${preset.intKm || 1000} km`;
-        else document.getElementById('hint-default-mon').innerText = `💡 原廠預設：${preset.intMon || 6} 個月`;
+        const p = globalPresets[editingItem] || { intKm: 1000, intMon: 6 };
+        document.getElementById('hint-default-km').innerText = `💡 原廠預設：${p.intKm} km`;
+        document.getElementById('hint-default-mon').innerText = `💡 原廠預設：${p.intMon} 月`;
     };
 
     window.openIntervalModal = (name) => {
@@ -211,7 +196,7 @@
         const updates = {};
         document.querySelectorAll('#manage-list input').forEach(input => {
             const key = input.value;
-            if (!bikeData.items[key]) {
+            if (!bikeData.items || !bikeData.items[key]) {
                 updates[`users/${userId}/items/${key}`] = { ...globalPresets[key], lastKm: bikeData.info.odo, lastDate: new Date().toISOString().split('T')[0], isActive: input.checked, mode: "KM" };
             } else { updates[`users/${userId}/items/${key}/isActive`] = input.checked; }
         });
