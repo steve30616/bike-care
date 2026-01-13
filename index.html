@@ -15,11 +15,12 @@
         .progress { height: 10px; border-radius: 10px; background-color: #f1f5f9; }
         .btn-fab { position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); width: 92%; max-width: 420px; border-radius: 35px; padding: 18px; font-weight: 800; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 100; }
         #loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; display: flex; justify-content: center; align-items: center; z-index: 9999; font-weight: bold; }
+        .category-header { font-size: 0.85rem; font-weight: 800; color: #94a3b8; margin: 30px 0 10px 5px; border-bottom: 1px solid #e2e8f0; }
     </style>
 </head>
 <body>
 
-<div id="loader">🚀 啟動中...</div>
+<div id="loader">🚀 極速啟動中...</div>
 
 <div id="setup-view" class="container py-5" style="display:none;">
     <h2 class="fw-bold text-center mb-4">歡迎使用機車管家</h2>
@@ -37,7 +38,7 @@
         <div class="container d-flex justify-content-between align-items-center">
             <div class="text-start">
                 <h2 class="fw-bold mb-0" id="display-name">---</h2>
-                <small id="header-subtext">車況良好</small>
+                <small id="header-subtext">載入中...</small>
             </div>
             <span class="badge bg-dark fs-6" id="display-odo">--- km</span>
         </div>
@@ -45,13 +46,50 @@
     <div class="container">
         <div class="d-flex gap-2 mb-4">
             <button onclick="openOdoModal()" class="btn btn-white bg-white flex-grow-1 shadow-sm py-2 border-0 fw-bold" style="border-radius:15px;">更新里程</button>
-            <button onclick="location.reload()" class="btn btn-white bg-white shadow-sm py-2 border-0 fw-bold px-4" style="border-radius:15px;">刷新</button>
+            <button onclick="openManageItemsModal()" class="btn btn-white bg-white shadow-sm py-2 border-0 fw-bold px-4" style="border-radius:15px;">項目管理</button>
         </div>
         <div id="items-container"></div>
     </div>
 </div>
 
 <button id="fab-btn" class="btn btn-primary btn-fab" style="display:none;" onclick="openServiceModal()">登記保養項目</button>
+
+<div class="modal fade" id="manageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:30px;">
+            <div class="modal-body p-4">
+                <h5 class="fw-bold mb-3">項目顯示管理</h5>
+                <div id="manage-list" class="mb-3" style="max-height: 400px; overflow-y: auto;"></div>
+                <button onclick="saveItemVisibility()" class="btn btn-primary w-100 py-3 fw-bold">儲存設定</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="serviceModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:30px;">
+            <div class="modal-body p-4">
+                <h5 class="fw-bold mb-3">保養登記</h5>
+                <div id="service-list" class="mb-3" style="max-height: 300px; overflow-y: auto;"></div>
+                <input type="number" id="sOdo" class="form-control mb-3" placeholder="保養時里程">
+                <button onclick="submitService()" class="btn btn-primary w-100 py-3 fw-bold">確認登記</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="intervalModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:30px;">
+            <div class="modal-body p-4 text-center">
+                <h5 id="intItemName" class="fw-bold mb-4">設定提醒週期</h5>
+                <div class="mb-3 text-start"><label class="small fw-bold">里程週期 (km)</label><input type="number" id="newIntKm" class="form-control"></div>
+                <button onclick="submitInterval()" class="btn btn-dark w-100 py-3 fw-bold" style="border-radius:15px;">儲存設定</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -72,6 +110,8 @@
     const urlParams = new URLSearchParams(window.location.search);
     const userId = urlParams.get('id');
 
+    let bikeData = null;
+
     window.onload = () => {
         if (!userId) {
             document.getElementById('setup-view').style.display = 'block';
@@ -83,9 +123,9 @@
 
     function loadVehicleData() {
         onValue(ref(db, 'users/' + userId), (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                renderDashboard(data);
+            bikeData = snapshot.val();
+            if (bikeData) {
+                renderDashboard(bikeData);
                 document.getElementById('main-view').style.display = 'block';
                 document.getElementById('fab-btn').style.display = 'block';
                 document.getElementById('loader').style.display = 'none';
@@ -95,92 +135,134 @@
         });
     }
 
-    // --- 建立新車：根據 presets 初始化 ---
-    window.createNewVehicle = async function() {
-        const name = document.getElementById('new-v-name').value;
-        const odo = parseInt(document.getElementById('new-v-odo').value);
-        if (!name || isNaN(odo)) return alert("請填寫正確資訊");
-
-        document.getElementById('loader').style.display = 'flex';
-        
-        try {
-            // 讀取 Firebase 裡的原廠設定
-            const presetsSnap = await get(ref(db, 'presets'));
-            const presets = presetsSnap.val() || {};
-            
-            const userItems = {};
-            for (let itemName in presets) {
-                // 只加入 isDefault 為 true 的項目
-                if (presets[itemName].isDefault) {
-                    userItems[itemName] = {
-                        intKm: presets[itemName].intKm,
-                        intMon: presets[itemName].intMon,
-                        category: presets[itemName].category,
-                        lastKm: odo,
-                        lastDate: new Date().toISOString().split('T')[0],
-                        isActive: true,
-                        mode: "KM"
-                    };
-                }
-            }
-
-            const newId = 'BIKE-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-            await set(ref(db, 'users/' + newId), {
-                info: { name: name, odo: odo, lastSync: new Date().toISOString() },
-                items: userItems
-            });
-            
-            window.location.search = `?id=${newId}`;
-        } catch (error) {
-            alert("建立失敗: " + error.message);
-            document.getElementById('loader').style.display = 'none';
-        }
-    };
-
     function renderDashboard(data) {
         document.getElementById('display-name').innerText = data.info.name;
         document.getElementById('display-odo').innerText = data.info.odo + " km";
-        
         const container = document.getElementById('items-container');
         container.innerHTML = "";
-        
         let hasExpired = false;
+
         const items = data.items;
+        const categories = [...new Set(Object.values(items).map(i => i.category))];
 
-        for (let key in items) {
-            const item = items[key];
-            if (!item.isActive) continue;
+        categories.forEach(cat => {
+            const catItems = Object.keys(items).filter(k => items[k].category === cat && items[k].isActive);
+            if (catItems.length > 0) {
+                const hDiv = document.createElement('div');
+                hDiv.className = 'category-header text-uppercase';
+                hDiv.innerText = cat;
+                container.appendChild(hDiv);
 
-            const remKm = (item.lastKm + item.intKm) - data.info.odo;
-            const progress = Math.max(0, Math.min(100, (remKm / item.intKm) * 100));
-            if (remKm <= 0) hasExpired = true;
+                catItems.forEach(key => {
+                    const item = items[key];
+                    const remKm = (item.lastKm + item.intKm) - data.info.odo;
+                    const progress = Math.max(0, Math.min(100, (remKm / item.intKm) * 100));
+                    if (remKm <= 0) hasExpired = true;
 
-            const card = document.createElement('div');
-            card.className = `card-item ${remKm <= 0 ? 'card-expired' : ''}`;
-            card.onclick = () => openIntervalModal(key, item.intKm);
-            
-            card.innerHTML = `
-                <div class="d-flex justify-content-between mb-2">
-                    <div class="fw-bold fs-5">${key}</div>
-                    <div class="${remKm <= 0 ? 'text-danger fw-bold' : 'text-success fw-bold'}">剩 ${remKm} km</div>
-                </div>
-                <div class="progress"><div class="progress-bar ${remKm <= 0 ? 'bg-danger' : 'bg-success'}" style="width:${progress}%"></div></div>
-            `;
-            container.appendChild(card);
-        }
+                    const card = document.createElement('div');
+                    card.className = `card-item ${remKm <= 0 ? 'card-expired' : ''}`;
+                    card.onclick = () => window.openIntervalModal(key, item.intKm);
+                    card.innerHTML = `
+                        <div class="d-flex justify-content-between mb-2">
+                            <div class="fw-bold fs-5">${key}</div>
+                            <div class="${remKm <= 0 ? 'text-danger fw-bold' : 'text-success fw-bold'}">剩 ${remKm} km</div>
+                        </div>
+                        <div class="progress"><div class="progress-bar ${remKm <= 0 ? 'bg-danger' : 'bg-success'}" style="width:${progress}%"></div></div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+        });
 
         const header = document.getElementById('header-area');
         header.className = hasExpired ? 'header-box header-warning' : 'header-box';
-        document.getElementById('header-subtext').innerText = hasExpired ? "注意：有保養項目已到期" : "目前的車況良好";
+        document.getElementById('header-subtext').innerText = hasExpired ? "注意：有保養項目已到期" : "車況良好";
     }
 
-    // 更新總里程
+    // --- 全域函數綁定 (確保按鈕有效) ---
+    window.createNewVehicle = async function() {
+        const name = document.getElementById('new-v-name').value;
+        const odo = parseInt(document.getElementById('new-v-odo').value);
+        if (!name || isNaN(odo)) return alert("請填寫資訊");
+
+        document.getElementById('loader').style.display = 'flex';
+        const presetsSnap = await get(ref(db, 'presets'));
+        const presets = presetsSnap.val() || {};
+        const userItems = {};
+
+        for (let key in presets) {
+            userItems[key] = {
+                ...presets[key],
+                lastKm: odo,
+                isActive: presets[key].isDefault || false,
+                mode: "KM"
+            };
+        }
+
+        const newId = 'BIKE-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+        await set(ref(db, 'users/' + newId), {
+            info: { name, odo, lastSync: new Date().toISOString() },
+            items: userItems
+        });
+        window.location.search = `?id=${newId}`;
+    };
+
     window.openOdoModal = () => {
-        const val = prompt("請輸入目前總里程 (km):", bikeData.info.odo);
+        const val = prompt("更新目前總里程:", bikeData.info.odo);
         if (val) update(ref(db, `users/${userId}/info`), { odo: parseInt(val) });
     };
 
-    // 週期設定
+    window.openManageItemsModal = () => {
+        const list = document.getElementById('manage-list');
+        list.innerHTML = "";
+        for (let key in bikeData.items) {
+            const item = bikeData.items[key];
+            list.innerHTML += `
+                <div class="form-check py-3 border-bottom d-flex align-items-center">
+                    <input class="form-check-input ms-0 me-3" type="checkbox" value="${key}" id="m-${key}" ${item.isActive ? 'checked' : ''} style="width:24px; height:24px;">
+                    <label class="form-check-label fw-bold w-100" for="m-${key}">${key}</label>
+                </div>`;
+        }
+        new bootstrap.Modal(document.getElementById('manageModal')).show();
+    };
+
+    window.saveItemVisibility = async () => {
+        const checks = document.querySelectorAll('#manage-list input');
+        const updates = {};
+        checks.forEach(input => {
+            updates[`users/${userId}/items/${input.value}/isActive`] = input.checked;
+        });
+        await update(ref(db), updates);
+        bootstrap.Modal.getInstance(document.getElementById('manageModal')).hide();
+    };
+
+    window.openServiceModal = () => {
+        const list = document.getElementById('service-list');
+        list.innerHTML = "";
+        for (let key in bikeData.items) {
+            if (!bikeData.items[key].isActive) continue;
+            const isExp = (bikeData.items[key].lastKm + bikeData.items[key].intKm) <= bikeData.info.odo;
+            list.innerHTML += `
+                <div class="form-check py-3 border-bottom d-flex align-items-center">
+                    <input class="form-check-input ms-0 me-3" type="checkbox" value="${key}" id="s-${key}" style="width:24px; height:24px;">
+                    <label class="form-check-label w-100 ${isExp ? 'text-danger fw-bold' : ''}" for="s-${key}">${key}</label>
+                </div>`;
+        }
+        document.getElementById('sOdo').value = bikeData.info.odo;
+        new bootstrap.Modal(document.getElementById('serviceModal')).show();
+    };
+
+    window.submitService = async () => {
+        const sOdo = parseInt(document.getElementById('sOdo').value);
+        const selected = document.querySelectorAll('#service-list input:checked');
+        const updates = {};
+        selected.forEach(cb => {
+            updates[`users/${userId}/items/${cb.value}/lastKm`] = sOdo;
+        });
+        await update(ref(db), updates);
+        bootstrap.Modal.getInstance(document.getElementById('serviceModal')).hide();
+    };
+
     let editingItem = "";
     window.openIntervalModal = (name, currentKm) => {
         editingItem = name;
@@ -189,40 +271,13 @@
         new bootstrap.Modal(document.getElementById('intervalModal')).show();
     };
 
-    window.submitInterval = () => {
-        const newKm = document.getElementById('newIntKm').value;
-        update(ref(db, `users/${userId}/items/${editingItem}`), { intKm: parseInt(newKm) });
+    window.submitInterval = async () => {
+        const newKm = parseInt(document.getElementById('newIntKm').value);
+        await update(ref(db, `users/${userId}/items/${editingItem}`), { intKm: newKm });
         bootstrap.Modal.getInstance(document.getElementById('intervalModal')).hide();
     };
 
-    // 保養登記
-    window.openServiceModal = () => {
-        const list = document.getElementById('service-list');
-        list.innerHTML = "";
-        for (let key in bikeData.items) {
-            if (!bikeData.items[key].isActive) continue;
-            list.innerHTML += `
-                <div class="form-check py-2 border-bottom">
-                    <input class="form-check-input" type="checkbox" value="${key}" id="chk-${key}">
-                    <label class="form-check-label w-100" for="chk-${key}">${key}</label>
-                </div>`;
-        }
-        document.getElementById('sOdo').value = bikeData.info.odo;
-        new bootstrap.Modal(document.getElementById('serviceModal')).show();
-    };
-
-    window.submitService = () => {
-        const selectedOdo = parseInt(document.getElementById('sOdo').value);
-        const checkboxes = document.querySelectorAll('#service-list input:checked');
-        const updates = {};
-        checkboxes.forEach(cb => {
-            updates[`users/${userId}/items/${cb.value}/lastKm`] = selectedOdo;
-        });
-        update(ref(db), updates);
-        bootstrap.Modal.getInstance(document.getElementById('serviceModal')).hide();
-    };
 </script>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
