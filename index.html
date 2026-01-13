@@ -86,11 +86,17 @@
     const userId = urlParams.get('id');
     let bikeData = null, editingItem = "", tempMode = "KM", globalPresets = {};
 
+    // 啟動載入
     window.onload = async () => { 
         try {
             const presetsSnap = await get(ref(db, 'presets'));
-            globalPresets = presetsSnap.val() || { "機油": { category: "引擎保養", intKm: 1000, intMon: 6, isDefault: true } };
-        } catch (e) { console.error(e); }
+            const data = presetsSnap.val();
+            // 如果 Firebase 有 presets 則使用，否則給予一組基礎預設
+            globalPresets = data && Object.keys(data).length > 0 ? data : {
+                "機油": { category: "引擎系統", intKm: 1000, intMon: 6, isDefault: true },
+                "齒輪油": { category: "引擎系統", intKm: 2000, intMon: 12, isDefault: true }
+            };
+        } catch (e) { console.error("Presets error:", e); }
 
         if (!userId) { 
             document.getElementById('setup-view').style.display = 'block'; 
@@ -108,7 +114,7 @@
                 document.getElementById('main-view').style.display = 'block';
                 document.getElementById('fab-btn').style.display = 'block';
                 document.getElementById('loader').style.display = 'none';
-            } else { alert("ID 錯誤"); window.location.href = window.location.pathname; }
+            } else { alert("查無車輛 ID"); window.location.href = window.location.pathname; }
         });
     }
 
@@ -148,7 +154,7 @@
         document.getElementById('header-subtext').innerText = globalExp ? "注意：有項目已到期" : "車況良好";
     }
 
-    // --- 按鈕掛載 ---
+    // --- 各功能函數 ---
     window.setEditMode = (m) => {
         tempMode = m;
         document.getElementById('mode-km').classList.toggle('active', m === 'KM');
@@ -194,11 +200,24 @@
 
     window.saveItemVisibility = async () => {
         const updates = {};
-        document.querySelectorAll('#manage-list input').forEach(input => {
+        const checkboxes = document.querySelectorAll('#manage-list input');
+        checkboxes.forEach(input => {
             const key = input.value;
+            // 判斷車輛是否已有該項目資料，沒有則建立初始值
             if (!bikeData.items || !bikeData.items[key]) {
-                updates[`users/${userId}/items/${key}`] = { ...globalPresets[key], lastKm: bikeData.info.odo, lastDate: new Date().toISOString().split('T')[0], isActive: input.checked, mode: "KM" };
-            } else { updates[`users/${userId}/items/${key}/isActive`] = input.checked; }
+                const preset = globalPresets[key];
+                updates[`users/${userId}/items/${key}`] = { 
+                    category: preset.category || "未分類",
+                    intKm: preset.intKm || 1000,
+                    intMon: preset.intMon || 6,
+                    lastKm: bikeData.info.odo, 
+                    lastDate: new Date().toISOString().split('T')[0], 
+                    isActive: input.checked, 
+                    mode: "KM" 
+                };
+            } else { 
+                updates[`users/${userId}/items/${key}/isActive`] = input.checked; 
+            }
         });
         await update(ref(db), updates);
         bootstrap.Modal.getInstance(document.getElementById('manageModal')).hide();
@@ -228,13 +247,27 @@
         bootstrap.Modal.getInstance(document.getElementById('serviceModal')).hide();
     };
 
+    // 關鍵修正：建立新車時根據 isDefault 判斷啟用
     window.createNewVehicle = async function() {
         const name = document.getElementById('new-v-name').value;
         const odo = parseInt(document.getElementById('new-v-odo').value);
         if (!name || isNaN(odo)) return;
         document.getElementById('loader').style.display = 'flex';
+        
         const userItems = {};
-        for (let key in globalPresets) { userItems[key] = { ...globalPresets[key], lastKm: odo, lastDate: new Date().toISOString().split('T')[0], isActive: globalPresets[key].isDefault || false, mode: "KM" }; }
+        for (let key in globalPresets) { 
+            const preset = globalPresets[key];
+            userItems[key] = { 
+                category: preset.category || "其他",
+                intKm: preset.intKm || 1000,
+                intMon: preset.intMon || 6,
+                lastKm: odo, 
+                lastDate: new Date().toISOString().split('T')[0], 
+                isActive: preset.isDefault === true, // 根據 isDefault 判斷
+                mode: "KM" 
+            }; 
+        }
+        
         const newId = 'BIKE-' + Math.random().toString(36).substr(2, 6).toUpperCase();
         await set(ref(db, 'users/' + newId), { info: { name, odo }, items: userItems });
         window.location.search = `?id=${newId}`;
